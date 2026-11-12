@@ -1,0 +1,58 @@
+[package]
+name = "pulse"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "A lightweight native Windows system monitor built with Rust and Iced."
+license = "MIT"
+authors = ["Z3PHYRZZ"]
+repository = "https://github.com/Z3PHYRZZ/Pulse"
+readme = "README.md"
+keywords = ["windows", "monitoring", "iced", "system", "rust"]
+categories = ["gui", "os::windows-apis"]
+
+[dependencies]
+iced = { version = "0.13.1", features = ["canvas", "tokio"] }
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_System_Performance",
+    "Win32_System_Threading",
+    "Win32_System_SystemInformation",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Registry",
+    "Win32_System_Memory",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Storage_FileSystem",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_LibraryLoader",
+    "Win32_Graphics_Gdi",
+] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "macros", "sync"] }
+futures = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+anyhow = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["clock"] }
+libloading = "0.9"
+dirs = "7"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+incremental = false
+
+[profile.dev]
+opt-level = 1
+incremental = true
+
+
