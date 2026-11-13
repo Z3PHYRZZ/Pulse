@@ -1,6 +1,24 @@
 # Changelog
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] — 2026-11-13
+### Fixed
+- Dropped the archived `legacy-iced` (Iced 0.13) crate from the workspace so CI no longer builds a dead dependency tree.
+- Removed the duplicate native Win32 tray and its polling thread; one system tray is now owned by Tauri's `TrayIconBuilder`.
+- Reworked the `WM_CLOSE` hook to keep one original window procedure per HWND, dropping the shared `thread_local[4]` index and the `0x8000` message collision.
+- Replaced the `ExitProcess` force-exit with a graceful `prevent_close()` + `app.exit(0)` on close.
+- Re-homed the orphaned root collector smoke tests into `pulse-core/tests/` so `cargo test --workspace` actually runs them (3/3 pass).
+- Rewrote `docs/ARCHITECTURE.md` and `docs/WINDOWS_API.md` to describe the live Tauri 2 layout instead of the removed Iced GUI and native tray.
+
+### Build
+- Scoped CI check/test to `--workspace` and the release build to `-p pulse`.
+- `cargo check`, `cargo test` (5 tests), and `cargo build --release -p pulse` all pass.
+
+### Downloads
+- `Pulse-2.0.3-portable-win-x64.exe` — standalone Tauri executable.
+- The Inno Setup installer is not included in this release; it cannot be rebuilt in this environment.
+
+
 ## [2.0.2] — 2026-11-13
 ### Fixed
 - Corrected the native `WM_CLOSE` hook so each hooked window uses its own thread-local original window procedure instead of a shared global index.
