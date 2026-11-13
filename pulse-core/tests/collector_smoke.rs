@@ -1,4 +1,4 @@
-// language: Rust, file: tests/collector_smoke.rs, target: Windows 11 x86_64
+// language: Rust, file: collector_smoke.rs, target: Windows 11 x86_64
 #![cfg(windows)]
 
 use std::mem::{size_of, zeroed};

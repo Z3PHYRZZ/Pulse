@@ -16,40 +16,10 @@
 | Uptime | `GetTickCount64` | Milliseconds since boot. |
 | OS version | Registry `HKLM\...\CurrentVersion` | `ProductName`, `CurrentBuild`. |
 | Startup | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | `REG_SZ` with quoted executable and `--minimized`. |
-| Tray | `Shell_NotifyIconW` + message-only `HWND_MESSAGE` | Callback routed through `WM_USER + 1`. The window close button uses full process shutdown; Hide to tray minimizes. |
+| Tray | Tauri `TrayIconBuilder` (muda/tray-icon) | One tray owned by the Tauri shell. Show/hide/exit are menu commands; double-click shows the window. The old native `Shell_NotifyIconW` tray was removed. |
+| Close | `WM_CLOSE` subclass + Tauri `CloseRequested` | `src-tauri/close.rs` stores one prev-wndproc per HWND. Close calls `prevent_close()` then `app.exit(0)` — full exit, no `ExitProcess` short-circuit. |
 
-All raw Win32 calls are confined to `src/collectors`, `src/windows`, and the API smoke tests.
-`@;
-$files['installer\pulse.iss']=@'
-[Setup]
-AppName=Pulse
-AppVersion=0.1.0
-AppPublisher=Z3PHYRZZ
-AppPublisherURL=https://github.com/Z3PHYRZZ/Pulse
-DefaultDirName={autopf}\Pulse
-DefaultGroupName=Pulse
-UninstallDisplayIcon={app}\pulse.exe
-OutputBaseFilename=PulseSetup
-Compression=lzma2
-SolidCompression=yes
-ArchitecturesInstallIn64BitMode=x64compatible
-LicenseFile=..\LICENSE
-
-[Files]
-Source: "..\target\release\pulse.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\config.default.toml"; DestDir: "{app}"; Flags: ignoreversion
-
-[Icons]
-Name: "{group}\Pulse"; Filename: "{app}\pulse.exe"
-Name: "{group}\Pulse (minimized)"; Filename: "{app}\pulse.exe"; Parameters: "--minimized"
-Name: "{autodesktop}\Pulse"; Filename: "{app}\pulse.exe"; Tasks: desktopicon
-
-[Tasks]
-Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Additional icons:"
-Name: "startupicon"; Description: "Start Pulse with Windows"; GroupDescription: "Startup:"
-
-[Run]
-Filename: "{app}\pulse.exe"; Description: "Launch Pulse"; Flags: nowait postinstall skipifsilent
-
+All raw Win32 calls are confined to `pulse-core/src/collectors`, `pulse-core/src/windows`,
+`src-tauri/src/close.rs`, and the collector smoke tests in `pulse-core/tests/`.
+The frontend in `frontend/` never calls Windows APIs directly; it talks to the shell
+through Tauri commands and the `pulse://metrics` event.
