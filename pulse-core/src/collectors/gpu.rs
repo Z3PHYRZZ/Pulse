@@ -39,7 +39,13 @@ struct Nvml {
 
 impl Nvml {
     fn load() -> Result<Self> {
-        let candidates = ["nvml.dll", "C:\\Windows\\System32\\nvml.dll"];
+        // Load NVML only from the system directory by absolute path. A bare
+        // "nvml.dll" would resolve through the DLL search order (application
+        // directory first), letting a planted library execute in this process.
+        let system_dir = std::env::var("SystemRoot")
+            .map(|root| format!("{root}\\System32\\nvml.dll"))
+            .unwrap_or_else(|_| "C:\\Windows\\System32\\nvml.dll".to_string());
+        let candidates = [system_dir.as_str()];
         let mut last_error = None;
         for candidate in candidates {
             match unsafe { libloading::Library::new(candidate) } {

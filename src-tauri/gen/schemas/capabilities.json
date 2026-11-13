@@ -1,1 +1,1 @@
-{"default":{"identifier":"default","description":"Pulse desktop capability set","local":true,"windows":["main"],"permissions":["core:default","core:event:default","core:window:allow-hide","core:window:allow-show","core:window:allow-set-focus"]}}
+{"default":{"identifier":"default","description":"Pulse desktop capability set — minimal IPC surface","local":true,"windows":["main"],"permissions":["core:event:default","core:window:allow-hide","core:window:allow-show","core:window:allow-set-focus"]}}
