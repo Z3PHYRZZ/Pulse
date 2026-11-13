@@ -25,6 +25,16 @@ Temperature is reported only when a vendor API exposes it. Standard Windows perf
 not guarantee CPU temperature, and DXGI does not expose utilization or temperature. Pulse shows
 `n/a` and a collector note instead of inventing a value.
 
+## Download
+
+Prebuilt Windows x64 binaries are published on the [v1.1.0 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v1.1.0).
+
+| File | Use |
+|---|---|
+| `Pulse-1.1.0-setup-win-x64.exe` | Installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
+| `Pulse-1.1.0-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
+
+The installer and portable executable target Windows 10/11 x86_64. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll`; CPU/GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
 ## Build
 
 Requirements:
@@ -126,5 +136,3 @@ MIT. Copyright (c) 2026 Z3PHYRZZ. See [LICENSE](LICENSE).
 
 The full MIT text, copyright notice, and permission notice are included in this repository and
 in the Inno Setup installer.
-
-
