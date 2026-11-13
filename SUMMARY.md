@@ -96,13 +96,36 @@ Fixes (commit 26c3f9b):
 - GitHub Release `Pulse v2.0.3` asset `Pulse-2.0.3-portable-win-x64.exe`
   re-uploaded (5,892,608 bytes) with `--clobber`; release notes updated.
 
-## State — ALL DONE
-- `main == origin/main == 26c3f9b`, working tree clean.
-- GitHub Actions: all recent runs success (26c3f9b, 509c369, 8408f02).
-- v2.0.3 Release public, portable exe current. Inno Setup installer not rebuilt
-  (Inno Setup not installed) — noted in release.
-- AI-Brain session log appended at `Sessions/2026-11-13.md` (21:56 entry).
+## State — ALL DONE (2026-11-13 22:42)
+- `main == origin/main == 4ffbf34`, working tree clean.
+- GitHub Actions: prior runs success; security commit CI in progress.
+- v2.0.3 Release public with 3 assets: portable exe, NSIS setup exe, MSI.
+
+## Vulnerability audit — FIXED & SHIPPED (commit fae1f26)
+Audited frontend/, pulse-core/src/, src-tauri/src/, capabilities, CI, installer,
+and dependency advisories (OSV query on exact locked versions: 0 vulnerabilities).
+- **Medium — DLL search-order hijack (FIXED):** `Nvml::load()` used bare
+  `"nvml.dll"` which resolves app-dir-first. Changed to absolute
+  `%SystemRoot%\System32\nvml.dll` only. `pulse-core/src/collectors/gpu.rs`.
+- **Low — over-broad capability (FIXED):** replaced `core:default` (~40 IPC
+  commands incl. path resolution, devtools toggle) with minimal
+  `core:event:default` + window hide/show/set-focus. `capabilities/default.json`
+  + regenerated `gen/schemas/capabilities.json`. Verified bundle still builds.
+- **Low (not fixed):** `save_config` accepts unvalidated `Config` fields; values
+  are clamped when read, so impact contained. Noted as residual.
+- **Info:** `unsafe impl Send` on Nvml/PdhQuery is sound today (single-threaded
+  per instance); no network listeners, no outbound HTTP, CSP blocks inline
+  script, all rendered strings HTML-escaped, registry handles closed.
+
+## Installer added to Release (2026-11-13 22:40)
+Inno Setup / NSIS / WiX not installed, but Tauri CLI 2.12.4 bundled its own
+NSIS + WiX toolchains (cached). Built:
+- `Pulse-2.0.3-setup-win-x64.exe` (NSIS, 1,726,252 bytes)
+- `Pulse-2.0.3-x64.msi` (WiX, 2,588,672 bytes)
+- portable exe rebuilt from the security-fixed source (5,857,792 bytes)
+All three uploaded to the v2.0.3 Release (portable `--clobber`), notes updated.
+`*.msi` added to `.gitignore` (commit 4ffbf34).
 
 ## Next steps
-None outstanding. If the Inno Setup installer is wanted later, install Inno Setup 6
-and run `iscc installer/pulse.iss`, then upload the setup exe to the v2.0.3 release.
+None outstanding. Residual low-risk item (config input validation) can be
+addressed later if desired; no exploit path identified.
