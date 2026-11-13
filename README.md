@@ -1,4 +1,4 @@
-# Pulse 1.1.0
+# Pulse 2.0.0
 
 Pulse is a lightweight native Windows system monitor built with Rust and Iced. It presents a
 dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray
@@ -36,6 +36,11 @@ Prebuilt Windows x64 binaries are published on the [v1.1.0 release page](https:/
 | `Pulse-1.1.0-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
 
 The installer and portable executable target Windows 10/11 x86_64. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll`; CPU/GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
+## Design
+
+Pulse keeps a fixed palette: `#0D1821` main background, `#142333` sidebar, `#344966` cards, `#F0F4EF` primary text, `#B4CDED` secondary text and primary buttons, `#0D1821` button text, `#B86F52` copper highlights, and `#52677E` borders.
+
+The Tauri frontend follows the linked anti-polish / raw aesthetic: scanned grain, lowercase headings, wobbly uneven card outlines, hard-step jitter, no smooth transitions, visible dashed focus, and rough hand-written spacing. Copper is reserved for collector warnings and temperatures at or above 80 °C. CPU, RAM, GPU, disk, and network keep separate accent identities.
 ## Build
 
 Requirements:
@@ -49,20 +54,21 @@ Requirements:
 ```powershell
 git clone https://github.com/Z3PHYRZZ/Pulse.git
 cd Pulse
-cargo build --release
+npm install
+npm run tauri build
 .\target\release\pulse.exe
 ```
 
 Run the Windows API smoke tests:
 
 ```powershell
-cargo test --all-targets --no-fail-fast
+cargo test --workspace --all-targets --no-fail-fast
 ```
 
 Build the installer after a release build:
 
 ```powershell
-iscc installer\pulse.iss
+npm run tauri build
 ```
 
 ## Configuration

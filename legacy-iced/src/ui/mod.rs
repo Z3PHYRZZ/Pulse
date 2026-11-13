@@ -1,0 +1,10 @@
+pub mod cpu;
+pub mod dashboard;
+pub mod gpu;
+pub mod memory;
+pub mod network;
+pub mod processes;
+pub mod settings;
+pub mod storage;
+pub mod theme;
+pub mod widgets;

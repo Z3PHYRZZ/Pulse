@@ -2,6 +2,20 @@
 
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] — 2026-11-13
+
+### Changed
+- Migrated the desktop shell from Iced to Tauri 2 with a raw HTML/CSS/JS frontend.
+- Split the workspace into `pulse-core`, `src-tauri`, and an archived `legacy-iced` reference crate.
+- Preserved native Windows collectors, configuration, startup integration, tray, close-to-exit behavior, and live metric streaming.
+- Applied the anti-polish / raw aesthetic: scanned grain, wobbly hand-drawn outlines, uneven rotations, hard-step jitter, lowercase headings, dashed focus states, and no smooth transitions.
+- Kept Manuel's palette exactly: `#0D1821` main background, `#142333` sidebar, `#344966` cards, `#F0F4EF` primary text, `#B4CDED` secondary text and primary buttons, `#0D1821` button text, `#B86F52` copper highlights, and `#52677E` borders.
+- Reserved copper for collector warnings and temperatures at or above 80 °C.
+- Kept CPU, RAM, GPU, disk, and network visual identities distinct with thinner smoothed SVG graph strokes.
+
+### Downloads
+- `Pulse-2.0.0-portable-win-x64.exe` — standalone Tauri executable.
+- `Pulse-2.0.0-setup-win-x64.exe` — Inno Setup wrapper for the standalone Tauri executable.
 ## [1.1.0] — 2026-11-13
 
 ### Added

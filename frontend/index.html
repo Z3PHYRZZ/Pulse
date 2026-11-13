@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pulse — overview</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-theme="dark">
+  <div class="grain" aria-hidden="true"></div>
+  <main class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">pulse<span class="scribble">_</span></div>
+        <div class="brand-note">native windows monitor<br />rough draft, still running</div>
+      </div>
+      <nav id="nav" aria-label="Sections"></nav>
+      <div class="sidebar-foot">
+        <div class="tiny-readout" id="tiny-readout">cpu -- · ram --</div>
+        <div class="scratch-note" id="status">waiting for first sample</div>
+        <div class="theme-row" role="group" aria-label="Theme">
+          <button class="raw-button" data-theme-button="dark" type="button">dark</button>
+          <button class="raw-button" data-theme-button="light" type="button">light</button>
+        </div>
+        <button class="raw-button wide" id="hide" type="button">hide to tray ↘</button>
+        <button class="raw-button wide" id="exit" type="button">exit ×</button>
+      </div>
+    </aside>
+    <section class="workspace">
+      <header class="topbar">
+        <div class="page-title" id="page-title">overview</div>
+        <div class="topbar-meta" id="topbar-meta">starting...</div>
+      </header>
+      <div id="view" class="view" aria-live="polite"></div>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "pulse-frontend",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "tauri": "tauri" },
+  "devDependencies": { "@tauri-apps/cli": "2.12.4", "@tauri-apps/api": "2.12.4" }
+}

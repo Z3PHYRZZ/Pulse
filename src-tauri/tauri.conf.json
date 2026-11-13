@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Pulse",
+  "version": "2.0.0",
+  "identifier": "com.zephyrzz.pulse",
+  "build": {
+    "frontendDist": "../frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Pulse — overview",
+        "width": 1180,
+        "height": 760,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "visible": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": ["icons/pulse.ico"],
+    "targets": ["msi", "nsis"],
+    "copyright": "Copyright © Z3PHYRZZ",
+    "category": "Utility",
+    "shortDescription": "Native Windows system monitor",
+    "longDescription": "Pulse is a native Windows system monitor built with Tauri, Rust and a raw anti-polish interface."
+  }
+}
