@@ -1,6 +1,20 @@
 # Changelog
-
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.2] — 2026-11-13
+### Fixed
+- Corrected the native `WM_CLOSE` hook so each hooked window uses its own thread-local original window procedure instead of a shared global index.
+- Guarded title-bar close handling against stale window-procedure chains on Tauri's webview windows.
+- Kept full process exit on close, including `--minimized` startup; `Hide to tray` remains the only background path.
+
+### Build
+- Rebuilt Windows x64 portable and installer executables with the corrected close hook.
+- Ignored local npm dependency artifacts so release builds no longer dirty the working tree.
+
+### Downloads
+- `Pulse-2.0.2-portable-win-x64.exe` — standalone Tauri executable.
+- `Pulse-2.0.2-setup-win-x64.exe` — installer for Windows 10/11 x64.
+
 
 ## [2.0.1] — 2026-11-13
 ### Fixed

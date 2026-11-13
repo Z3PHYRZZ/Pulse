@@ -1,5 +1,5 @@
 // language: Rust, file: close.rs, target: Windows 11 x86_64, edition 2021
-use std::sync::atomic::{AtomicIsize, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicIsize, Ordering};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::Threading::{GetCurrentProcessId, GetCurrentThreadId};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -11,8 +11,8 @@ type WndProc = unsafe extern "system" fn(HWND, u32, WPARAM, LPARAM) -> LRESULT;
 
 const HOOK_READY: u32 = 0x8000;
 
-static PREV_WNDPROC: [AtomicIsize; 4] = [const { AtomicIsize::new(0) }; 4];
-static HOOK_INDEX: AtomicUsize = AtomicUsize::new(0);
+thread_local! { static PREV_WNDPROC: AtomicIsize = const { AtomicIsize::new(0) }; }
+
 
 pub fn install_close_hook() {
     let main_thread_id = unsafe { GetCurrentThreadId() };
@@ -30,7 +30,7 @@ fn install_close_hook_worker(window_thread_id: u32) {
         while let Some(hwnd) =
             unsafe { find_next_pulse_window(current_pid, window_thread_id, &hooked) }
         {
-            if unsafe { hook_window(hwnd, hooked.len()) } {
+            if unsafe { hook_window(hwnd) } {
                 hooked.push(hwnd);
                 tracing::info!("Pulse WM_CLOSE hook installed on {hwnd:?}");
             }
@@ -55,12 +55,12 @@ unsafe fn find_next_pulse_window(pid: u32, window_thread_id: u32, hooked: &[HWND
     target.hwnd
 }
 
-unsafe fn hook_window(hwnd: HWND, index: usize) -> bool {
+unsafe fn hook_window(hwnd: HWND) -> bool {
     let prev = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, close_wndproc as WndProc as isize);
     if prev == 0 {
         return false;
     }
-    PREV_WNDPROC[index].store(prev, Ordering::Release);
+    PREV_WNDPROC.with(|slot| slot.store(prev, Ordering::Release));
     true
 }
 
@@ -99,8 +99,7 @@ unsafe extern "system" fn close_wndproc(
     if msg == HOOK_READY {
         return LRESULT(0);
     }
-    let index = HOOK_INDEX.load(Ordering::Acquire);
-    let prev = PREV_WNDPROC[index].load(Ordering::Acquire);
+    let prev = PREV_WNDPROC.with(|slot| slot.load(Ordering::Acquire));
     if prev == 0 {
         return LRESULT(0);
     }
