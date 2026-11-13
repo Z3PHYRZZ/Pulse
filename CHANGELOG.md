@@ -2,6 +2,17 @@
 
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] — 2026-11-13
+### Fixed
+- Painted the raw dashboard shell, navigation, loading card, and live clock before any Tauri command or metric sample.
+- Kept metric streaming alive with a dedicated runtime thread and buffered the latest sample so early samples are not lost while the webview listener attaches.
+- Preserved close-button exit behavior for normal and `--minimized` startup.
+### UI
+- Added an always-visible topbar clock/time readout from first paint.
+- Kept Manuel's palette, raw anti-polish surface, thin identity borders, distinct CPU/RAM/GPU/disk/network accents, and restrained copper warnings.
+### Downloads
+- `Pulse-2.0.1-portable-win-x64.exe` — standalone Tauri executable.
+- `Pulse-2.0.1-setup-win-x64.exe` — Inno Setup wrapper standalone Tauri executable.
 ## [2.0.0] — 2026-11-13
 
 ### Changed

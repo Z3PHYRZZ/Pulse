@@ -243,3 +243,6 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .shell { grid-template-columns: 180px 1fr; }
   .grid, .grid.three { grid-template-columns: 1fr; }
 }
+.boot-card { border-style: dashed; }
+.boot-list { display: grid; gap: 8px; margin-top: 12px; color: var(--secondary); font-size: 12px; }
+.boot-list span { border-bottom: 1px dotted var(--border); padding-bottom: 4px; }

@@ -14,7 +14,16 @@
         <div class="brand-mark">pulse<span class="scribble">_</span></div>
         <div class="brand-note">native windows monitor<br />rough draft, still running</div>
       </div>
-      <nav id="nav" aria-label="Sections"></nav>
+      <nav id="nav" aria-label="Sections">
+<button class="nav-button selected" data-nav="overview" type="button">overview</button>
+<button class="nav-button" data-nav="cpu" type="button">cpu</button>
+<button class="nav-button" data-nav="memory" type="button">memory</button>
+<button class="nav-button" data-nav="gpu" type="button">gpu</button>
+<button class="nav-button" data-nav="storage" type="button">storage</button>
+<button class="nav-button" data-nav="network" type="button">network</button>
+<button class="nav-button" data-nav="processes" type="button">processes</button>
+<button class="nav-button" data-nav="settings" type="button">settings</button>
+</nav>
       <div class="sidebar-foot">
         <div class="tiny-readout" id="tiny-readout">cpu -- · ram --</div>
         <div class="scratch-note" id="status">waiting for first sample</div>
@@ -29,9 +38,22 @@
     <section class="workspace">
       <header class="topbar">
         <div class="page-title" id="page-title">overview</div>
-        <div class="topbar-meta" id="topbar-meta">starting...</div>
+        <div class="topbar-meta" id="topbar-meta">starting... • <span id="clock">--:--:--</span></div>
       </header>
-      <div id="view" class="view" aria-live="polite"></div>
+      <div id="view" class="view" aria-live="polite">
+<div class="section-head">overview</div>
+<article class="raw-card boot-card">
+<div class="card-label">collectors warming up...</div>
+<div class="card-value">rough draft, still running</div>
+<div class="boot-list">
+<span>cpu — waiting</span>
+<span>memory — waiting</span>
+<span>gpu — waiting</span>
+<span>disk — waiting</span>
+<span>network — waiting</span>
+</div>
+</article>
+</div>
     </section>
   </main>
   <script type="module" src="./app.js"></script>

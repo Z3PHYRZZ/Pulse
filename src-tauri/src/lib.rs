@@ -17,6 +17,7 @@ pub struct PulseState {
     config: Arc<ConfigState>,
     engine: EngineHandle,
     tray_events: Arc<Mutex<mpsc::Receiver<TrayEvent>>>,
+    latest_sample: Arc<Mutex<Option<MetricSample>>>,
 }
 
 #[derive(Serialize, Clone)]
@@ -40,6 +41,15 @@ fn snapshot(state: State<'_, PulseState>) -> Snapshot {
         startup_enabled: startup::is_enabled(),
         minimized: std::env::args().any(|arg| arg == "--minimized"),
     }
+}
+
+#[tauri::command]
+fn latest_sample(state: State<'_, PulseState>) -> Option<MetricSample> {
+    state
+        .latest_sample
+        .lock()
+        .expect("latest sample lock")
+        .clone()
 }
 
 #[tauri::command]
@@ -91,15 +101,29 @@ fn exit_app(app: AppHandle) -> Result<(), String> {
 fn start_metric_stream(
     app: AppHandle,
     receiver: tokio::sync::mpsc::UnboundedReceiver<MetricSample>,
+    latest_sample: Arc<Mutex<Option<MetricSample>>>,
 ) {
-    tokio::spawn(async move {
-        let mut receiver = receiver;
-        while let Some(sample) = receiver.recv().await {
-            if app.emit("pulse://metrics", sample).is_err() {
-                break;
-            }
-        }
-    });
+    std::thread::Builder::new()
+        .name("pulse-tauri-metric-stream".to_string())
+        .spawn(move || {
+            let runtime = match tokio::runtime::Runtime::new() {
+                Ok(runtime) => runtime,
+                Err(err) => {
+                    tracing::error!("metric stream runtime failed: {err}");
+                    return;
+                }
+            };
+            runtime.block_on(async move {
+                let mut receiver = receiver;
+                while let Some(sample) = receiver.recv().await {
+                    *latest_sample.lock().expect("latest sample lock") = Some(sample.clone());
+                    if app.emit("pulse://metrics", sample).is_err() {
+                        break;
+                    }
+                }
+            });
+        })
+        .expect("spawning Pulse metric stream");
 }
 
 fn start_tray_stream(app: AppHandle, receiver: Arc<Mutex<mpsc::Receiver<TrayEvent>>>) {
@@ -187,16 +211,16 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(|app| {
-            let runtime = tokio::runtime::Runtime::new().map_err(|err| err.to_string())?;
-            let _guard = runtime.enter();
             let config = ConfigState::load().map_err(|err| err.to_string())?;
             let engine = EngineHandle::start(config).map_err(|err| err.to_string())?;
             let (tray_sender, tray_receiver) = mpsc::channel();
             let tray = Tray::spawn(tray_sender).map_err(|err| err.to_string())?;
+            let latest_sample = Arc::new(Mutex::new(None::<MetricSample>));
             app.manage(PulseState {
                 config: engine.config.clone(),
                 engine,
                 tray_events: Arc::new(Mutex::new(tray_receiver)),
+                latest_sample: latest_sample.clone(),
             });
             app.manage(tray);
             let state = app.state::<PulseState>();
@@ -204,7 +228,7 @@ pub fn run() {
                 .engine
                 .take_receiver()
                 .ok_or_else(|| "metrics receiver already taken".to_string())?;
-            start_metric_stream(app.handle().clone(), metrics_receiver);
+            start_metric_stream(app.handle().clone(), metrics_receiver, latest_sample);
             start_tray_stream(app.handle().clone(), state.tray_events.clone());
             build_tray(app.handle())?;
             close::install_close_hook();
@@ -223,6 +247,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            latest_sample,
             set_theme,
             save_config,
             set_startup,

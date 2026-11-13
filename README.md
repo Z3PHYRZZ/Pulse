@@ -1,4 +1,4 @@
-# Pulse 2.0.0
+# Pulse 2.0.1
 
 Pulse is a lightweight native Windows system monitor built with Rust and Iced. It presents a
 dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray
@@ -28,12 +28,12 @@ not guarantee CPU temperature, and DXGI does not expose utilization or temperatu
 
 ## Download
 
-Prebuilt Windows x64 binaries are published on the [v1.1.0 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v1.1.0).
+Prebuilt Windows x64 binaries are published on the [v2.0.1 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.0.1).
 
 | File | Use |
 |---|---|
-| `Pulse-1.1.0-setup-win-x64.exe` | Installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
-| `Pulse-1.1.0-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
+| `Pulse-2.0.1-setup-win-x64.exe` | Installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
+| `Pulse-2.0.1-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
 
 The installer and portable executable target Windows 10/11 x86_64. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll`; CPU/GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
 ## Design
