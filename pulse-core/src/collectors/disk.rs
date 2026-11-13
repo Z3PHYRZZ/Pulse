@@ -18,6 +18,7 @@ impl DiskCollector {
         let mut query = PdhQuery::new()?;
         let read = query.add_counter(DISK_READ).ok();
         let write = query.add_counter(DISK_WRITE).ok();
+        query.warm_up();
         Ok(Self { query, read, write })
     }
 

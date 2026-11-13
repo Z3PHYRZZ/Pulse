@@ -36,6 +36,7 @@ impl CpuCollector {
         }
         let frequency = query.add_counter(CPU_FREQUENCY).ok();
         let nominal_mhz = read_nominal_frequency_mhz().ok();
+        query.warm_up();
         Ok(Self {
             query,
             total,

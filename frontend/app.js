@@ -1,5 +1,20 @@
 const invoke = window.__TAURI_INTERNALS__?.invoke;
-const listen = window.__TAURI_INTERNALS__?.listen;
+// Tauri 2 does NOT expose `window.__TAURI_INTERNALS__.listen`. Events must be
+// subscribed through the `plugin:event|listen` command using a transformCallback
+// handler id. The raw JS frontend has no @tauri-apps/api bundle, so we build the
+// equivalent here. Event delivery is { event, id, payload }.
+function listenEvent(event, handler) {
+  const internals = window.__TAURI_INTERNALS__;
+  if (!invoke || !internals?.transformCallback) {
+    return Promise.reject(new Error("Tauri event bridge unavailable"));
+  }
+  const handlerId = internals.transformCallback((data) => handler(data));
+  return invoke("plugin:event|listen", {
+    event,
+    target: { kind: "Any" },
+    handler: handlerId,
+  }).then((eventId) => () => invoke("plugin:event|unlisten", { event, eventId }));
+}
 const PAGES = ["overview", "cpu", "memory", "gpu", "storage", "network", "processes", "settings"];
 const ACCENTS = { cpu: "#81A9CD", memory: "#A9C7E8", gpu: "#AFA0D1", disk: "#BFA77E", network: "#83B4AE" };
 const state = { page: "overview", theme: "dark", snapshot: null, latest: null, history: { cpu: [], memory: [], gpu: [], disk: [], network: [] }, sort: "cpu", filter: "" };
@@ -36,6 +51,20 @@ function fallbackSnapshot() { return {config:{refresh_ms:1000,history_seconds:18
 async function loadSnapshot() { try { state.snapshot=await command("snapshot"); state.theme=state.snapshot?.theme||"dark"; setStatus(state.snapshot?.minimized?"started hidden, close still exits":"ready, rough edges included"); } catch(err) { state.snapshot=fallbackSnapshot(); state.theme="dark"; setStatus(`tauri bridge offline: ${err.message||err}`); } updateTheme(); paintClock(); render(); }
 async function loadLatestSample() { try { const sample=await command("latest_sample"); if(sample)ingest(sample); } catch(_) { /* event stream will deliver the next sample */ } }
 function startClock() { paintClock(); setInterval(paintClock,1000); }
-function startMetricListener() { if(!listen)return; listen("pulse://metrics",(event)=>ingest(event.payload)).catch((err)=>setStatus(`metric listener offline: ${err.message||err}`)); }
+function startMetricListener() {
+  // Primary: Tauri event stream (one push per engine tick).
+  if (invoke) {
+    listenEvent("pulse://metrics", (event) => ingest(event.payload))
+      .catch((err) => setStatus(`metric listener offline: ${err.message || err}; polling fallback active`));
+  }
+  // Fallback: poll the latest_sample command so the UI never freezes on a single
+  // boot-time snapshot, even if the event bridge or listener is unavailable.
+  setInterval(async () => {
+    try {
+      const sample = await command("latest_sample");
+      if (sample) ingest(sample);
+    } catch (_) { /* event stream is the primary path */ }
+  }, 1000);
+}
 function boot() { state.snapshot=fallbackSnapshot(); updateTheme(); startClock(); render(); startMetricListener(); loadSnapshot(); loadLatestSample(); }
 boot();

@@ -62,7 +62,39 @@ out intermittently on long execution calls; short read-only git commands land.
   deleting it is a large destructive diff not needed for a green build; the
   archived copy already lives in `legacy-iced/`.
 
+## Second pass — DONE (commit b4f2bb4)
+- Root `tests/collector_smoke.rs` was ORPHANED (root Cargo.toml is workspace-only,
+  no `[package]`, so a root `tests/` dir never compiles). Re-homed to
+  `pulse-core/tests/collector_smoke.rs`; 3/3 tests pass there.
+- Rewrote `docs/ARCHITECTURE.md` and `docs/WINDOWS_API.md` for the live
+  pulse-core + src-tauri + frontend layout (removed dead Iced GUI / native tray refs).
+- Orphaned top-level `src/` (95 dead Iced files) left deliberately — inert;
+  `legacy-iced/` already holds the archived copy.
+
+## Release 2.0.3 — DONE (commit 8408f02, tag v2.0.3)
+- Bumped version to 2.0.3 in Cargo.toml, src-tauri/tauri.conf.json, package.json,
+  installer/pulse.iss, config.default.toml; new CHANGELOG.md section.
+- Pushed `b4f2bb4..8408f02` + tag `v2.0.3`; published GitHub Release
+  `Pulse v2.0.3` with asset `Pulse-2.0.3-portable-win-x64.exe`.
+- Inno Setup installer NOT rebuilt (Inno Setup not installed) — noted in release.
+
+## 0% utilization bug — DONE (2026-11-13 21:56, under same 2.0.3)
+Root cause (verified with a throwaway `pulse-core/examples/probe.rs`, deleted after):
+`window.__TAURI_INTERNALS__.listen` does NOT exist in Tauri 2 (confirmed against
+installed `tauri-2.12.5` scripts). `startMetricListener()` bailed on `if(!listen)return`,
+so the UI froze on the single boot-time `latest_sample()` — the un-warmed 0% first
+sample. PDH rate counters also need two collections before yielding a value.
+Fixes:
+- `frontend/app.js`: raw `plugin:event|listen` subscription via `transformCallback`
+  (target `{kind:"Any"}`), plus a 1s `latest_sample` polling fallback so metrics
+  never freeze. `node --check` passes.
+- `pulse-core/src/collectors/pdh.rs`: `PdhQuery::warm_up()` — short bounded collects
+  until a rate counter yields a value; called in cpu/disk/network `new()`.
+- Verified: probe sample 0 = 4.9% (was 0%), later samples real; `cargo check`,
+  `cargo test` (2 config + 3 smoke), `cargo build --release -p pulse` all EXIT=0.
+
 ## Next steps
-1. Commit the re-homed smoke test + rewritten docs, push to origin/main.
-2. Confirm CI goes green on the pushed commits.
-3. Update this file after each major step.
+1. Commit the 0% fix (5 files + SUMMARY.md), push to origin/main.
+2. Rebuild + re-upload `Pulse-2.0.3-portable-win-x64.exe` to the existing v2.0.3
+   Release (same version, `--clobber`).
+3. Confirm CI green; update this file after each major step.

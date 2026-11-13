@@ -64,6 +64,28 @@ impl PdhQuery {
         let number = unsafe { value.Anonymous.doubleValue };
         number.is_finite().then_some(number)
     }
+
+    /// Rate/percentage PDH counters need two collections before they yield a
+    /// value. Prime the query with a few short-interval collections so the very
+    /// first sample delivered to the UI is real instead of 0%.
+    pub fn warm_up(&self) {
+        for attempt in 0..6 {
+            if self.collect().is_err() {
+                return;
+            }
+            if self
+                .counters
+                .iter()
+                .enumerate()
+                .any(|(index, _)| self.double(index).is_some())
+            {
+                return;
+            }
+            // PDH needs elapsed wall time to compute a rate. Keep this short so
+            // startup stays instant, but long enough for a valid delta.
+            std::thread::sleep(std::time::Duration::from_millis(60 + attempt * 20));
+        }
+    }
 }
 
 impl Drop for PdhQuery {

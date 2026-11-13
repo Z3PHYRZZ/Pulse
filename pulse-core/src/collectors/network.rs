@@ -16,6 +16,7 @@ impl NetworkCollector {
         let mut query = PdhQuery::new()?;
         let sent = query.add_counter(NET_SENT).ok();
         let received = query.add_counter(NET_RECEIVED).ok();
+        query.warm_up();
         Ok(Self {
             query,
             sent,
