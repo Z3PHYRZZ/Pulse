@@ -1,6 +1,7 @@
 use crate::app::PulseApp;
 use crate::messages::Message;
 use crate::models::ProcessSort;
+use crate::ui::theme as pulse_theme;
 use crate::ui::widgets::section_title;
 use crate::utils::format_bytes;
 use iced::widget::{column, row, scrollable, text, text_input};
@@ -62,10 +63,18 @@ fn sort_button<'a>(
     value: ProcessSort,
     active: ProcessSort,
 ) -> iced::widget::Button<'a, Message> {
-    let button = iced::widget::button(text(label).size(12)).on_press(Message::SortChanged(value));
-    if value == active {
-        button.style(iced::widget::button::primary)
-    } else {
-        button
-    }
+    let selected = value == active;
+    iced::widget::button(
+        iced::widget::text(label)
+            .size(12)
+            .style(move |theme: &iced::Theme| iced::widget::text::Style {
+                color: Some(if selected {
+                    pulse_theme::text_primary(theme)
+                } else {
+                    pulse_theme::text_secondary(theme)
+                }),
+            }),
+    )
+    .on_press(Message::SortChanged(value))
+    .style(pulse_theme::nav_button_style(selected))
 }

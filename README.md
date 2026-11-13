@@ -18,6 +18,7 @@ and optional Windows startup integration.
 - **Processes** — Tool Help enumeration, per-process CPU deltas, working-set memory, sorting and filtering.
 - **System** — hostname, OS product name, build number, user, uptime, and total physical memory.
 - **Dashboard** — Iced Canvas sparklines, bounded 60–300 second history, eight navigation pages, and Dark/Light mode buttons.
+- **Pulse palette** — deep navy surfaces, slate-blue cards, ice-blue controls, restrained copper warnings, thin identity-colored borders, consistent rounded corners, and smooth low-weight graphs. CPU, RAM, GPU, disk, and network each carry a distinct visual identity.
 - **Windows integration** — `Shell_NotifyIconW` tray menu, minimize-to-tray, and `HKCU\...\Run` startup setting.
 - **Configuration** — TOML refresh interval, history length, process row limit, theme, and startup preferences.
 

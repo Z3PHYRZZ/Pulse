@@ -3,6 +3,7 @@ use crate::engine::EngineHandle;
 use crate::messages::{Message, Page, TrayEvent};
 use crate::models::{MetricSample, ProcessInfo, ProcessSort, SystemInfo};
 use crate::ui;
+use crate::ui::theme as pulse_theme;
 use crate::utils::{format_rate, History};
 use anyhow::Result;
 use iced::widget::{button, column, container, row, text};
@@ -257,38 +258,46 @@ impl PulseApp {
             .unwrap_or_else(|| self.config.get().theme_mode());
         let sidebar = container(
             column![
-                text("Pulse").size(30),
-                text("native windows monitor").size(12),
+                text("Pulse").size(30).style(|theme: &Theme| text::Style {
+                    color: Some(pulse_theme::text_primary(theme)),
+                }),
+                text("native windows monitor")
+                    .size(12)
+                    .style(|theme: &Theme| text::Style {
+                        color: Some(pulse_theme::text_secondary(theme)),
+                    }),
                 iced::widget::horizontal_rule(1),
                 nav_column(self.page),
                 iced::widget::vertical_space().height(Length::Fill),
                 theme_buttons(active_theme),
                 text(format!(
-                    "CPU {}  RAM {}",
+                    "CPU {} • RAM {}",
                     format_short(self.latest.cpu.usage_percent),
                     format_short(self.latest.memory.usage_percent)
                 ))
-                .size(12),
-                text(&self.status).size(11),
-                button(text("Hide to tray").size(12)).on_press(Message::HideWindow),
-                button(text("Exit").size(12)).on_press(Message::Exit),
+                .size(12)
+                .style(|theme: &Theme| text::Style {
+                    color: Some(pulse_theme::text_secondary(theme)),
+                }),
+                text(&self.status)
+                    .size(11)
+                    .style(move |theme: &Theme| text::Style {
+                        color: Some(if self.status.contains("failed") {
+                            pulse_theme::HIGHLIGHT
+                        } else {
+                            pulse_theme::text_secondary(theme)
+                        }),
+                    }),
+                secondary_button("Hide to tray", Message::HideWindow),
+                secondary_button("Exit", Message::Exit),
             ]
             .spacing(10)
             .padding(16),
         )
         .width(210)
         .height(Length::Fill)
-        .style(|theme: &Theme| container::Style {
-            background: Some(iced::Background::Color(
-                theme.palette().background.scale_alpha(0.96),
-            )),
-            border: iced::Border {
-                color: theme.palette().text.scale_alpha(0.12),
-                width: 1.0,
-                radius: 0.0.into(),
-            },
-            ..container::Style::default()
-        });
+        .style(|theme: &Theme| pulse_theme::sidebar_style(theme));
+
         let content = match self.page {
             Page::Overview => ui::dashboard::view(self),
             Page::Cpu => ui::cpu::view(self),
@@ -299,14 +308,22 @@ impl PulseApp {
             Page::Processes => ui::processes::view(self),
             Page::Settings => ui::settings::view(self),
         };
-        let main = column![top_bar(self), container(content).height(Length::Fill)].spacing(0);
+        let main = column![
+            top_bar(self),
+            container(content)
+                .height(Length::Fill)
+                .style(|theme: &Theme| container::Style {
+                    background: Some(pulse_theme::surface(theme).into()),
+                    ..container::Style::default()
+                })
+        ]
+        .spacing(0);
         row![sidebar, main]
             .spacing(0)
             .width(Length::Fill)
             .height(Length::Fill)
             .into()
     }
-
     pub fn visible_processes(&self) -> impl Iterator<Item = &ProcessInfo> {
         let mut list: Vec<&ProcessInfo> = self
             .latest
@@ -331,79 +348,108 @@ impl PulseApp {
 }
 
 fn nav_column<'a>(active: Page) -> iced::widget::Column<'a, Message> {
-    let mut out = iced::widget::column![].spacing(6);
+    let mut out = iced::widget::column![].spacing(5);
     for page in Page::ALL {
-        let item = button(text(page.label()).size(14))
-            .width(Length::Fill)
-            .on_press(Message::Navigate(page));
-        out = out.push(if page == active {
-            item.style(iced::widget::button::primary)
-        } else {
-            item
-        });
+        let item = button(
+            text(page.label())
+                .size(14)
+                .style(move |theme: &Theme| text::Style {
+                    color: Some(if page == active {
+                        pulse_theme::text_primary(theme)
+                    } else {
+                        pulse_theme::text_secondary(theme)
+                    }),
+                }),
+        )
+        .width(Length::Fill)
+        .on_press(Message::Navigate(page))
+        .style(pulse_theme::nav_button_style(page == active));
+        out = out.push(item);
     }
     out
 }
 
 fn theme_buttons<'a>(active: ThemeMode) -> iced::widget::Row<'a, Message> {
-    let dark = button(text("Dark").size(12)).on_press(Message::ThemeChanged(ThemeMode::Dark));
-    let light = button(text("Light").size(12)).on_press(Message::ThemeChanged(ThemeMode::Light));
-    row![
-        if active == ThemeMode::Dark {
-            dark.style(iced::widget::button::primary)
-        } else {
-            dark
-        },
-        if active == ThemeMode::Light {
-            light.style(iced::widget::button::primary)
-        } else {
-            light
-        },
-    ]
-    .spacing(8)
+    let dark = primary_button(
+        "Dark",
+        Message::ThemeChanged(ThemeMode::Dark),
+        active == ThemeMode::Dark,
+    );
+    let light = primary_button(
+        "Light",
+        Message::ThemeChanged(ThemeMode::Light),
+        active == ThemeMode::Light,
+    );
+    row![dark, light].spacing(8)
 }
 
 fn top_bar(app: &PulseApp) -> Element<'_, Message> {
     container(
         row![
-            text(app.page.label()).size(20),
+            text(app.page.label())
+                .size(20)
+                .style(|theme: &Theme| text::Style {
+                    color: Some(pulse_theme::text_primary(theme)),
+                }),
             iced::widget::horizontal_space().width(Length::Fill),
-            text(format!(
+            top_bar_text(format!(
                 "{} • {}",
                 app.system.hostname, app.system.os_version
-            ))
-            .size(12),
-            text(format!(
+            )),
+            top_bar_text(format!(
                 "R {} • W {}",
                 format_rate(app.latest.disk.read_bytes_per_sec),
                 format_rate(app.latest.disk.write_bytes_per_sec)
-            ))
-            .size(12),
-            text(format!(
+            )),
+            top_bar_text(format!(
                 "↑ {} • ↓ {}",
                 format_rate(app.latest.network.upload_bytes_per_sec),
                 format_rate(app.latest.network.download_bytes_per_sec)
-            ))
-            .size(12),
-            text(app.last_update.as_str()).size(12),
+            )),
+            top_bar_text(app.last_update.clone()),
         ]
         .spacing(16)
         .padding(12),
     )
-    .style(|theme: &Theme| container::Style {
-        background: Some(iced::Background::Color(
-            theme.palette().background.scale_alpha(0.92),
-        )),
-        border: iced::Border {
-            color: theme.palette().text.scale_alpha(0.08),
-            width: 1.0,
-            radius: 0.0.into(),
-        },
-        ..container::Style::default()
-    })
+    .style(|theme: &Theme| pulse_theme::top_bar_style(theme))
     .into()
 }
 
+fn top_bar_text<'a>(value: impl ToString) -> iced::widget::Text<'a> {
+    text(value.to_string())
+        .size(12)
+        .style(|theme: &Theme| text::Style {
+            color: Some(pulse_theme::text_secondary(theme)),
+        })
+}
+
+fn primary_button<'a>(
+    label: &'a str,
+    message: Message,
+    active: bool,
+) -> iced::widget::Button<'a, Message> {
+    button(
+        text(label)
+            .size(12)
+            .style(move |theme: &Theme| text::Style {
+                color: Some(if active {
+                    pulse_theme::button_text(theme)
+                } else {
+                    pulse_theme::text_secondary(theme)
+                }),
+            }),
+    )
+    .on_press(message)
+    .style(pulse_theme::primary_button_style(active))
+}
+
+fn secondary_button<'a>(label: &'a str, message: Message) -> iced::widget::Button<'a, Message> {
+    button(text(label).size(12).style(|theme: &Theme| text::Style {
+        color: Some(pulse_theme::text_secondary(theme)),
+    }))
+    .on_press(message)
+    .style(pulse_theme::subtle_button_style())
+}
 fn apply_startup(enabled: bool) -> Result<()> {
     if enabled {
         crate::windows::startup::enable()

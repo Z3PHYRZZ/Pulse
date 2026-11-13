@@ -38,8 +38,8 @@ impl ThemeMode {
 
     pub fn to_iced(self) -> iced::Theme {
         match self {
-            ThemeMode::Dark => iced::Theme::Dark,
-            ThemeMode::Light => iced::Theme::Light,
+            ThemeMode::Dark => crate::ui::theme::dark(),
+            ThemeMode::Light => crate::ui::theme::light(),
         }
     }
 }

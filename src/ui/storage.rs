@@ -1,9 +1,10 @@
 use crate::app::PulseApp;
 use crate::messages::Message;
+use crate::ui::theme as pulse_theme;
 use crate::ui::widgets::{metric_card, section_title};
 use crate::utils::{format_bytes, format_rate, percent_text};
 use iced::widget::{column, scrollable, text};
-use iced::{Color, Element};
+use iced::Element;
 
 pub fn view(app: &PulseApp) -> Element<'_, Message> {
     let d = &app.latest.disk;
@@ -17,7 +18,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
                 format_rate(d.write_bytes_per_sec)
             ),
             &app.history.disk,
-            Color::from_rgb8(0xFF, 0xC1, 0x4D)
+            pulse_theme::DISK
         ),
         text("Volumes").size(18),
     ]

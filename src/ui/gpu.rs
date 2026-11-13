@@ -1,9 +1,10 @@
 use crate::app::PulseApp;
 use crate::messages::Message;
+use crate::ui::theme as pulse_theme;
 use crate::ui::widgets::{metric_card, section_title};
 use crate::utils::{format_bytes, percent_text};
 use iced::widget::{column, scrollable, text};
-use iced::{Color, Element};
+use iced::{Element, Theme};
 
 pub fn view(app: &PulseApp) -> Element<'_, Message> {
     let g = &app.latest.gpu;
@@ -19,13 +20,28 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
         .temperature_c
         .map(|v| format!("{v:.0} °C"))
         .unwrap_or_else(|| "unavailable".to_string());
+    let temperature = text(format!("Temperature: {temp}"))
+        .size(15)
+        .style(move |theme: &Theme| text::Style {
+            color: Some(pulse_theme::warning_color(theme, g.temperature_c)),
+        });
     scrollable(
         column![
             section_title("GPU"),
-            metric_card("Utilization", usage, format!("{} • {}", g.name, g.source), &app.history.gpu, Color::from_rgb8(0xB7, 0x7C, 0xFF)),
+            metric_card(
+                "Utilization",
+                usage,
+                format!("{} • {}", g.name, g.source),
+                &app.history.gpu,
+                pulse_theme::GPU,
+            ),
             text(format!("VRAM: {vram}")).size(15),
-            text(format!("Temperature: {temp}")).size(15),
-            text("NVML supplies NVIDIA utilization, VRAM and temperature. DXGI supplies adapter identity and dedicated VRAM only.").size(12),
+            temperature,
+            text("NVML supplies NVIDIA utilization, VRAM and temperature. DXGI supplies adapter identity and dedicated VRAM only.")
+                .size(12)
+                .style(|theme: &Theme| text::Style {
+                    color: Some(pulse_theme::text_secondary(theme)),
+                }),
         ]
         .spacing(14)
         .padding(20),

@@ -1,9 +1,10 @@
 use crate::app::PulseApp;
 use crate::messages::{Message, Page};
-use crate::ui::widgets::{metric_card, section_title};
+use crate::ui::theme as pulse_theme;
+use crate::ui::widgets::{detail_card, metric_card, section_title};
 use crate::utils::{format_bytes, format_rate, format_uptime, percent_text};
-use iced::widget::{column, container, row, scrollable, text};
-use iced::{Color, Element, Length};
+use iced::widget::{button, column, row, scrollable, text};
+use iced::{Element, Length, Theme};
 
 pub fn view(app: &PulseApp) -> Element<'_, Message> {
     let s = &app.latest;
@@ -12,7 +13,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
         percent_text(s.cpu.usage_percent),
         format!("{} logical cores • {}", s.cpu.logical_cores, s.cpu.name),
         &app.history.cpu,
-        Color::from_rgb8(0x4C, 0xD9, 0x64),
+        pulse_theme::CPU,
     );
     let memory = metric_card(
         "Memory",
@@ -23,7 +24,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
             format_bytes(s.memory.total_bytes)
         ),
         &app.history.memory,
-        Color::from_rgb8(0x5A, 0x9C, 0xFF),
+        pulse_theme::MEMORY,
     );
     let gpu_usage = s
         .gpu
@@ -35,7 +36,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
         gpu_usage,
         format!("{} • {}", s.gpu.name, s.gpu.source),
         &app.history.gpu,
-        Color::from_rgb8(0xB7, 0x7C, 0xFF),
+        pulse_theme::GPU,
     );
     let disk = metric_card(
         "Disk",
@@ -46,7 +47,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
             format_rate(s.disk.write_bytes_per_sec)
         ),
         &app.history.disk,
-        Color::from_rgb8(0xFF, 0xC1, 0x4D),
+        pulse_theme::DISK,
     );
     let network = metric_card(
         "Network",
@@ -57,45 +58,44 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
             format_rate(s.network.download_bytes_per_sec)
         ),
         &app.history.network,
-        Color::from_rgb8(0x35, 0xD0, 0xC0),
+        pulse_theme::NETWORK,
     );
-    let system = container(
-        column![
-            text("System").size(18),
-            text(format!(
-                "{} • {}",
-                app.system.hostname, app.system.os_version
-            ))
-            .size(14),
-            text(format!(
+    let system = detail_card(
+        "System",
+        vec![
+            format!("{} • {}", app.system.hostname, app.system.os_version),
+            format!(
                 "Build {} • user {}",
                 app.system.build_number, app.system.username
-            ))
-            .size(13),
-            text(format!("Uptime {}", format_uptime(s.uptime_seconds))).size(13),
-            text(format!("Processes {}", s.processes.len())).size(13),
-            text(format!("Updated {}", app.last_update)).size(12),
-        ]
-        .spacing(8),
-    )
-    .padding(16)
-    .width(Length::Fill)
-    .style(|theme: &iced::Theme| container::Style {
-        background: Some(iced::Background::Color(
-            theme.palette().background.scale_alpha(0.85),
-        )),
-        border: iced::Border {
-            color: theme.palette().text.scale_alpha(0.12),
-            width: 1.0,
-            radius: 10.0.into(),
-        },
-        ..container::Style::default()
-    });
-    let warning = if s.warnings.is_empty() {
-        text("All active collectors reporting.").size(12)
+            ),
+            format!("Uptime {}", format_uptime(s.uptime_seconds)),
+            format!("Processes {}", s.processes.len()),
+            format!("Updated {}", app.last_update),
+        ],
+    );
+    let warning_label = if s.warnings.is_empty() {
+        "All active collectors reporting.".to_string()
     } else {
-        text(format!("Collector notes: {}", s.warnings.join(" | "))).size(12)
+        format!("Collector notes: {}", s.warnings.join(" | "))
     };
+    let warning = text(warning_label)
+        .size(12)
+        .style(move |theme: &Theme| text::Style {
+            color: Some(if s.warnings.is_empty() {
+                pulse_theme::text_secondary(theme)
+            } else {
+                pulse_theme::HIGHLIGHT
+            }),
+        });
+    let settings = button(
+        text("Open Settings")
+            .size(13)
+            .style(|theme: &Theme| text::Style {
+                color: Some(pulse_theme::text_secondary(theme)),
+            }),
+    )
+    .on_press(Message::Navigate(Page::Settings))
+    .style(pulse_theme::subtle_button_style());
     scrollable(
         column![
             section_title("Overview"),
@@ -103,8 +103,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
             row![gpu, network].spacing(14),
             row![disk, system].spacing(14),
             warning,
-            iced::widget::button(text("Open Settings").size(13))
-                .on_press(Message::Navigate(Page::Settings)),
+            settings,
         ]
         .spacing(14)
         .padding(20),

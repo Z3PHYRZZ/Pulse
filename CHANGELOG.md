@@ -18,6 +18,14 @@ All notable changes to Pulse are documented here. Versions follow [Semantic Vers
 - Sidebar and tray `Exit` actions route through `ExitProcess(0)` after tray shutdown.
 - README, roadmap, Windows API notes, and Settings page now state that the close button always exits fully.
 
+### UI
+- Applied Pulse dark palette: `#0D1821` background, `#142333` sidebar, `#344966` cards, `#F0F4EF` primary text, `#B4CDED` secondary text/buttons, `#B86F52` copper highlights, and `#52677E` borders.
+- Replaced bright blue navigation buttons with subtle selected-state card backgrounds.
+- Switched cards to thin identity-colored borders and consistent 10 px rounded corners.
+- Reduced sparkline stroke to 1.35 px and smoothed the plotted curve.
+- Separated CPU, RAM, GPU, disk, and network visual identities.
+- Reserved copper for collector warnings and temperatures at or above 80 °C.
+- Added a light variant derived from the same palette while keeping Dark/Light persistence.
 ### Fixed
 - Close button now fully exits both visible windows and `--minimized` startup windows instead of leaving Pulse running in the background.
 - Dark/Light button state now follows the persisted configuration instead of a static dark-only theme.

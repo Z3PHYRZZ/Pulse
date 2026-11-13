@@ -1,9 +1,10 @@
 use crate::app::PulseApp;
 use crate::messages::Message;
+use crate::ui::theme as pulse_theme;
 use crate::ui::widgets::{metric_card, section_title};
 use crate::utils::format_rate;
 use iced::widget::{column, scrollable, text};
-use iced::{Color, Element};
+use iced::Element;
 
 pub fn view(app: &PulseApp) -> Element<'_, Message> {
     let n = &app.latest.network;
@@ -13,7 +14,7 @@ pub fn view(app: &PulseApp) -> Element<'_, Message> {
             format_rate(n.upload_bytes_per_sec + n.download_bytes_per_sec),
             "Bytes/sec across network interfaces",
             &app.history.network,
-            Color::from_rgb8(0x35, 0xD0, 0xC0)
+            pulse_theme::NETWORK
         ),
         text(format!("Upload: {}", format_rate(n.upload_bytes_per_sec))).size(15),
         text(format!(
