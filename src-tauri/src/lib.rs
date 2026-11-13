@@ -1,12 +1,12 @@
-mod close;
 // language: Rust, file: lib.rs, target: Windows 11 x86_64, edition 2021
+mod close;
+
 use pulse_core::config::{Config, ConfigState, ThemeMode};
 use pulse_core::engine::EngineHandle;
 use pulse_core::models::MetricSample;
 use pulse_core::windows::startup;
-use pulse_core::windows::tray::{Tray, TrayEvent};
 use serde::Serialize;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
@@ -16,7 +16,6 @@ use tauri::{
 pub struct PulseState {
     config: Arc<ConfigState>,
     engine: EngineHandle,
-    tray_events: Arc<Mutex<mpsc::Receiver<TrayEvent>>>,
     latest_sample: Arc<Mutex<Option<MetricSample>>>,
 }
 
@@ -126,38 +125,6 @@ fn start_metric_stream(
         .expect("spawning Pulse metric stream");
 }
 
-fn start_tray_stream(app: AppHandle, receiver: Arc<Mutex<mpsc::Receiver<TrayEvent>>>) {
-    std::thread::Builder::new()
-        .name("pulse-tauri-tray-stream".to_string())
-        .spawn(move || loop {
-            let event = {
-                let guard = receiver.lock().expect("tray receiver lock");
-                guard
-                    .recv_timeout(std::time::Duration::from_millis(250))
-                    .ok()
-            };
-            match event {
-                Some(TrayEvent::Show) => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                }
-                Some(TrayEvent::Hide) => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.minimize();
-                    }
-                }
-                Some(TrayEvent::Exit) => {
-                    app.exit(0);
-                    break;
-                }
-                None => {}
-            }
-        })
-        .expect("spawning tray stream");
-}
-
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "Show Pulse", true, None::<&str>)?;
     let hide = MenuItem::with_id(app, "hide", "Hide to tray", true, None::<&str>)?;
@@ -181,7 +148,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             }
             "hide" => {
                 if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.minimize();
+                    let _ = window.hide();
                 }
             }
             "exit" => app.exit(0),
@@ -213,35 +180,31 @@ pub fn run() {
         .setup(|app| {
             let config = ConfigState::load().map_err(|err| err.to_string())?;
             let engine = EngineHandle::start(config).map_err(|err| err.to_string())?;
-            let (tray_sender, tray_receiver) = mpsc::channel();
-            let tray = Tray::spawn(tray_sender).map_err(|err| err.to_string())?;
             let latest_sample = Arc::new(Mutex::new(None::<MetricSample>));
             app.manage(PulseState {
                 config: engine.config.clone(),
                 engine,
-                tray_events: Arc::new(Mutex::new(tray_receiver)),
                 latest_sample: latest_sample.clone(),
             });
-            app.manage(tray);
             let state = app.state::<PulseState>();
             let metrics_receiver = state
                 .engine
                 .take_receiver()
                 .ok_or_else(|| "metrics receiver already taken".to_string())?;
             start_metric_stream(app.handle().clone(), metrics_receiver, latest_sample);
-            start_tray_stream(app.handle().clone(), state.tray_events.clone());
             build_tray(app.handle())?;
             close::install_close_hook();
             let window = app
                 .get_webview_window("main")
                 .ok_or_else(|| "main window missing".to_string())?;
             if std::env::args().any(|arg| arg == "--minimized") {
-                let _ = window.minimize();
+                let _ = window.hide();
             }
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { .. } = event {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
                 window.app_handle().exit(0);
             }
         })

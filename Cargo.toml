@@ -1,5 +1,5 @@
 [workspace]
-members = ["pulse-core", "legacy-iced", "src-tauri"]
+members = ["pulse-core", "src-tauri"]
 resolver = "2"
 
 [workspace.package]

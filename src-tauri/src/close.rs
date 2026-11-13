@@ -1,5 +1,11 @@
 // language: Rust, file: close.rs, target: Windows 11 x86_64, edition 2021
-use std::sync::atomic::{AtomicIsize, Ordering};
+// WM_CLOSE hook: subclasses each Pulse top-level window so the titlebar X
+// exits fully instead of leaving the WebView process alive. Tauri's own
+// CloseRequested handler (see lib.rs) performs the graceful exit; this hook
+// exists only to guarantee Win32 WM_CLOSE reaches that handler on builds
+// where wry does not forward it. One prev-wndproc per HWND, never shared.
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::Threading::{GetCurrentProcessId, GetCurrentThreadId};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -9,10 +15,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 type WndProc = unsafe extern "system" fn(HWND, u32, WPARAM, LPARAM) -> LRESULT;
 
-const HOOK_READY: u32 = 0x8000;
-
-thread_local! { static PREV_WNDPROC: AtomicIsize = const { AtomicIsize::new(0) }; }
-
+static PREV_PROCS: LazyLock<Mutex<HashMap<isize, isize>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub fn install_close_hook() {
     let main_thread_id = unsafe { GetCurrentThreadId() };
@@ -24,67 +28,78 @@ pub fn install_close_hook() {
 
 fn install_close_hook_worker(window_thread_id: u32) {
     let current_pid = unsafe { GetCurrentProcessId() };
-    let mut hooked: Vec<HWND> = Vec::new();
+    // Wait for wry/tao to create the top-level windows (up to 5s).
     for _ in 0..100 {
         std::thread::sleep(std::time::Duration::from_millis(50));
-        while let Some(hwnd) =
-            unsafe { find_next_pulse_window(current_pid, window_thread_id, &hooked) }
+        let mut hooked = Vec::new();
+        unsafe { enum_pulse_windows(current_pid, window_thread_id, &mut hooked) };
+        for hwnd in hooked {
+            unsafe { hook_window(hwnd) };
+        }
+        if PREV_PROCS
+            .lock()
+            .map(|procs| !procs.is_empty())
+            .unwrap_or(false)
         {
-            if unsafe { hook_window(hwnd) } {
-                hooked.push(hwnd);
-                tracing::info!("Pulse WM_CLOSE hook installed on {hwnd:?}");
-            }
-            if hooked.len() >= 4 {
-                return;
-            }
+            return;
         }
     }
+    tracing::warn!("Pulse main window not found for WM_CLOSE hook");
 }
 
-unsafe fn find_next_pulse_window(pid: u32, window_thread_id: u32, hooked: &[HWND]) -> Option<HWND> {
-    let mut target = HookTarget {
-        hwnd: None,
-        pid,
-        hooked,
-    };
-    let _ = EnumThreadWindows(
-        window_thread_id,
-        Some(enum_pulse_window),
-        LPARAM(&mut target as *mut HookTarget as isize),
-    );
-    target.hwnd
-}
-
-unsafe fn hook_window(hwnd: HWND) -> bool {
-    let prev = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, close_wndproc as WndProc as isize);
-    if prev == 0 {
-        return false;
-    }
-    PREV_WNDPROC.with(|slot| slot.store(prev, Ordering::Release));
-    true
-}
-
-struct HookTarget<'a> {
-    hwnd: Option<HWND>,
+struct EnumState {
     pid: u32,
-    hooked: &'a [HWND],
+    procs: Vec<HWND>,
 }
 
-unsafe extern "system" fn enum_pulse_window(hwnd: HWND, lparam: LPARAM) -> windows::core::BOOL {
-    let target = &mut *(lparam.0 as *mut HookTarget<'_>);
+unsafe fn enum_pulse_windows(pid: u32, thread_id: u32, out: &mut Vec<HWND>) {
+    let mut state = EnumState { pid, procs: Vec::new() };
+    let _ = EnumThreadWindows(
+        thread_id,
+        Some(enum_pulse_window_callback),
+        LPARAM(&mut state as *mut EnumState as isize),
+    );
+    out.extend(state.procs);
+}
+
+unsafe extern "system" fn enum_pulse_window_callback(
+    hwnd: HWND,
+    lparam: LPARAM,
+) -> windows::core::BOOL {
+    let state = &mut *(lparam.0 as *mut EnumState);
     let mut pid = 0u32;
     GetWindowThreadProcessId(hwnd, Some(&mut pid));
-    if pid != target.pid || target.hooked.iter().any(|known| known.0 == hwnd.0) {
+    if pid != state.pid {
         return windows::core::BOOL(1);
     }
     let mut title = [0u16; 256];
     let len = GetWindowTextW(hwnd, &mut title) as usize;
+    if len == 0 {
+        return windows::core::BOOL(1);
+    }
     let title = String::from_utf16_lossy(&title[..len]);
     if !title.starts_with("Pulse") {
         return windows::core::BOOL(1);
     }
-    target.hwnd = Some(hwnd);
-    windows::core::BOOL(0)
+    state.procs.push(hwnd);
+    windows::core::BOOL(1)
+}
+
+unsafe fn hook_window(hwnd: HWND) {
+    let key = hwnd.0 as isize;
+    if let Ok(procs) = PREV_PROCS.lock() {
+        if procs.contains_key(&key) {
+            return;
+        }
+    }
+    let prev = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, close_wndproc as WndProc as isize);
+    if prev == 0 {
+        return;
+    }
+    if let Ok(mut procs) = PREV_PROCS.lock() {
+        procs.insert(key, prev);
+    }
+    tracing::info!("Pulse WM_CLOSE hook installed on {hwnd:?}");
 }
 
 unsafe extern "system" fn close_wndproc(
@@ -93,16 +108,18 @@ unsafe extern "system" fn close_wndproc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    let prev = PREV_PROCS
+        .lock()
+        .ok()
+        .and_then(|procs| procs.get(&(hwnd.0 as isize)).copied())
+        .unwrap_or(0);
     if msg == WM_CLOSE {
-        pulse_core::force_exit();
+        // Let tao/wry receive WM_CLOSE; Tauri's CloseRequested handler exits.
+        // Do NOT call ExitProcess here — that skips tray cleanup and webview shutdown.
     }
-    if msg == HOOK_READY {
-        return LRESULT(0);
-    }
-    let prev = PREV_WNDPROC.with(|slot| slot.load(Ordering::Acquire));
     if prev == 0 {
         return LRESULT(0);
     }
-    let prev = std::mem::transmute::<isize, WndProc>(prev);
-    CallWindowProcW(Some(prev), hwnd, msg, wparam, lparam)
+    let prev_proc = std::mem::transmute::<isize, WndProc>(prev);
+    CallWindowProcW(Some(prev_proc), hwnd, msg, wparam, lparam)
 }
