@@ -6,6 +6,50 @@ use std::time::Duration;
 
 const DEFAULT_TOML: &str = include_str!("../../config.default.toml");
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ThemeMode {
+    #[default]
+    Dark,
+    Light,
+}
+
+impl ThemeMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            ThemeMode::Dark => "Dark",
+            ThemeMode::Light => "Light",
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ThemeMode::Dark => "dark",
+            ThemeMode::Light => "light",
+        }
+    }
+
+    pub fn parse(value: &str) -> Self {
+        if value.eq_ignore_ascii_case("light") {
+            ThemeMode::Light
+        } else {
+            ThemeMode::Dark
+        }
+    }
+
+    pub fn to_iced(self) -> iced::Theme {
+        match self {
+            ThemeMode::Dark => iced::Theme::Dark,
+            ThemeMode::Light => iced::Theme::Light,
+        }
+    }
+}
+
+impl std::fmt::Display for ThemeMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -32,6 +76,10 @@ impl Config {
 
     pub fn history_len(&self) -> usize {
         self.history_seconds.clamp(10, 600)
+    }
+
+    pub fn theme_mode(&self) -> ThemeMode {
+        ThemeMode::parse(&self.theme)
     }
 
     pub fn sort_key(&self) -> crate::models::ProcessSort {
@@ -91,5 +139,26 @@ impl ConfigState {
         next.save(&self.path)?;
         *self.inner.write().expect("config lock poisoned") = next;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn theme_mode_round_trips() {
+        assert_eq!(ThemeMode::parse("dark"), ThemeMode::Dark);
+        assert_eq!(ThemeMode::parse("LIGHT"), ThemeMode::Light);
+        assert_eq!(ThemeMode::Dark.as_str(), "dark");
+        assert_eq!(ThemeMode::Light.to_string(), "light");
+    }
+
+    #[test]
+    fn default_config_parses() {
+        let config = Config::default();
+        assert_eq!(config.theme_mode(), ThemeMode::Dark);
+        assert_eq!(config.refresh_interval(), Duration::from_secs(1));
+        assert_eq!(config.history_len(), 180);
     }
 }

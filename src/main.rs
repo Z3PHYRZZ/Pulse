@@ -36,25 +36,30 @@ fn main() -> Result<()> {
 
     let config_state = ConfigState::load().context("configuration")?;
     let config_path = Config::path()?;
-    let initial_config = config_state.get();
+
     let engine = EngineHandle::start(config_state).context("monitoring engine")?;
 
     let (tray_sender, tray_receiver) = std::sync::mpsc::channel();
     let tray = crate::windows::tray::Tray::spawn(tray_sender).context("system tray")?;
     let app = PulseApp::new(engine, config_path, tray_receiver).context("application state")?;
 
+    crate::windows::close::install_close_hook();
+
     let minimized = std::env::args().any(|arg| arg == "--minimized");
     let window_settings = iced::window::Settings {
         size: Size::new(1180.0, 760.0),
-        visible: !minimized && !initial_config.start_minimized,
-        exit_on_close_request: !initial_config.minimize_to_tray,
+        visible: true,
+        exit_on_close_request: true,
         ..iced::window::Settings::default()
     };
 
-    tracing::info!("Pulse starting; minimized={minimized}");
+    tracing::info!(
+        "Pulse {} starting; minimized={minimized}",
+        env!("CARGO_PKG_VERSION")
+    );
     iced::application(PulseApp::title, PulseApp::update, PulseApp::view)
         .subscription(subscriptions)
-        .theme(|_| iced::Theme::Dark)
+        .theme(PulseApp::theme)
         .window(window_settings)
         .centered()
         .run_with(move || {
@@ -70,14 +75,13 @@ fn main() -> Result<()> {
         .context("Iced application")?;
 
     tray.shutdown();
-    Ok(())
+    crate::windows::tray::force_exit()
 }
 
 fn subscriptions(state: &PulseApp) -> Subscription<Message> {
     Subscription::batch([
         metrics_subscription(state),
         Subscription::run_with_id("pulse-tray", tray_stream(state.tray_receiver.clone())),
-        iced::window::close_requests().map(Message::CloseRequested),
     ])
 }
 

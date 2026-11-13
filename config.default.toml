@@ -1,4 +1,4 @@
-# Pulse default configuration. Copy to %APPDATA%\Pulse\config.toml and edit.
+# Pulse 1.1.0 default configuration. Copy to %APPDATA%\Pulse\config.toml and edit.
 refresh_ms = 1000
 history_seconds = 180
 max_process_rows = 300
@@ -7,3 +7,6 @@ start_minimized = false
 minimize_to_tray = true
 enable_startup = false
 theme = "dark"
+
+# The close button always exits. Hide to tray uses this preference.
+

@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::{Config, ThemeMode};
 use crate::models::{MetricSample, ProcessSort};
 use std::sync::mpsc::Receiver;
 
@@ -12,13 +12,13 @@ pub enum Message {
     HistoryChanged(usize),
     ToggleStartup(bool),
     ToggleMinimizeToTray(bool),
+    ThemeChanged(ThemeMode),
     SaveSettings(Config),
-
     HideWindow,
+
     WindowDiscovered(Option<iced::window::Id>),
     MinimizeDiscovered(bool, Option<iced::window::Id>),
-    CloseWindowDiscovered(Option<iced::window::Id>),
-    CloseRequested(iced::window::Id),
+
     Exit,
     OpenConfigFolder,
     TrayEvent(TrayEvent),
@@ -48,6 +48,7 @@ impl Page {
         Page::Processes,
         Page::Settings,
     ];
+
     pub fn label(self) -> &'static str {
         match self {
             Page::Overview => "Overview",

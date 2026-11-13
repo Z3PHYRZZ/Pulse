@@ -1,4 +1,4 @@
-use crate::config::{Config, ConfigState};
+use crate::config::{Config, ConfigState, ThemeMode};
 use crate::engine::EngineHandle;
 use crate::messages::{Message, Page, TrayEvent};
 use crate::models::{MetricSample, ProcessInfo, ProcessSort, SystemInfo};
@@ -26,12 +26,14 @@ pub struct PulseApp {
     pub pending_history_seconds: Option<usize>,
     pub pending_startup: Option<bool>,
     pub pending_tray: Option<bool>,
+    pub pending_theme: Option<ThemeMode>,
     pub last_update: String,
     pub status: String,
     pub window_id: Option<iced::window::Id>,
     pub tray_receiver: Arc<Mutex<Receiver<TrayEvent>>>,
 }
 
+#[derive(Debug, Clone)]
 pub struct AppHistory {
     pub cpu: History,
     pub memory: History,
@@ -86,6 +88,7 @@ impl PulseApp {
             pending_history_seconds: None,
             pending_startup: None,
             pending_tray: None,
+            pending_theme: None,
             last_update: "waiting for first sample".to_string(),
             window_id: None,
             status: if startup {
@@ -99,6 +102,12 @@ impl PulseApp {
 
     pub fn title(&self) -> String {
         format!("Pulse — {}", self.page.label())
+    }
+
+    pub fn theme(&self) -> Theme {
+        self.pending_theme
+            .unwrap_or_else(|| self.config.get().theme_mode())
+            .to_iced()
     }
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
@@ -147,8 +156,26 @@ impl PulseApp {
                 self.pending_tray = Some(value);
                 Task::none()
             }
+            Message::ThemeChanged(mode) => {
+                self.pending_theme = Some(mode);
+                let mut draft = self.config.get();
+                draft.theme = mode.as_str().to_string();
+                match self.config.set(draft) {
+                    Ok(()) => {
+                        self.pending_theme = None;
+                        self.status = format!("{} mode active", mode.label());
+                    }
+                    Err(err) => self.status = format!("theme save failed: {err:#}"),
+                }
+                Task::none()
+            }
             Message::SaveSettings(mut draft) => {
                 draft.process_sort = sort_name(self.sort);
+                draft.theme = self
+                    .pending_theme
+                    .unwrap_or_else(|| draft.theme_mode())
+                    .as_str()
+                    .to_string();
                 let startup = draft.enable_startup;
                 match self
                     .config
@@ -161,6 +188,7 @@ impl PulseApp {
                         self.pending_history_seconds = None;
                         self.pending_startup = None;
                         self.pending_tray = None;
+                        self.pending_theme = None;
                         self.status = format!(
                             "settings saved at {}",
                             chrono::Local::now().format("%H:%M:%S")
@@ -170,23 +198,20 @@ impl PulseApp {
                 }
                 Task::none()
             }
+
             Message::WindowDiscovered(id) => {
                 self.window_id = id;
-                Task::none()
+                if self.visible {
+                    Task::none()
+                } else {
+                    self.minimize_task(true)
+                }
             }
             Message::HideWindow => {
                 self.visible = false;
                 self.minimize_task(true)
             }
-            Message::CloseRequested(id) => {
-                self.window_id = Some(id);
-                if self.config.get().minimize_to_tray {
-                    self.visible = false;
-                    self.minimize_task(true)
-                } else {
-                    Task::perform(async {}, |_| Message::Exit)
-                }
-            }
+
             Message::MinimizeDiscovered(minimized, id) => {
                 self.window_id = id;
                 match id {
@@ -194,15 +219,8 @@ impl PulseApp {
                     None => Task::none(),
                 }
             }
-            Message::CloseWindowDiscovered(Some(id)) => iced::window::close(id),
-            Message::CloseWindowDiscovered(None) => std::process::exit(0),
-            Message::Exit => {
-                self.engine.shutdown();
-                match self.window_id {
-                    Some(id) => iced::window::close(id),
-                    None => iced::window::get_oldest().map(Message::CloseWindowDiscovered),
-                }
-            }
+
+            Message::Exit => crate::windows::tray::force_exit(),
             Message::OpenConfigFolder => {
                 if let Some(parent) = self.config_path.parent() {
                     let _ = std::fs::create_dir_all(parent);
@@ -223,6 +241,7 @@ impl PulseApp {
             Message::TrayEvent(TrayEvent::Exit) => Task::perform(async {}, |_| Message::Exit),
         }
     }
+
     fn minimize_task(&self, minimized: bool) -> Task<Message> {
         match self.window_id {
             Some(id) => iced::window::minimize(id, minimized),
@@ -233,6 +252,9 @@ impl PulseApp {
     }
 
     pub fn view(&self) -> Element<'_, Message> {
+        let active_theme = self
+            .pending_theme
+            .unwrap_or_else(|| self.config.get().theme_mode());
         let sidebar = container(
             column![
                 text("Pulse").size(30),
@@ -240,6 +262,7 @@ impl PulseApp {
                 iced::widget::horizontal_rule(1),
                 nav_column(self.page),
                 iced::widget::vertical_space().height(Length::Fill),
+                theme_buttons(active_theme),
                 text(format!(
                     "CPU {}  RAM {}",
                     format_short(self.latest.cpu.usage_percent),
@@ -320,6 +343,24 @@ fn nav_column<'a>(active: Page) -> iced::widget::Column<'a, Message> {
         });
     }
     out
+}
+
+fn theme_buttons<'a>(active: ThemeMode) -> iced::widget::Row<'a, Message> {
+    let dark = button(text("Dark").size(12)).on_press(Message::ThemeChanged(ThemeMode::Dark));
+    let light = button(text("Light").size(12)).on_press(Message::ThemeChanged(ThemeMode::Light));
+    row![
+        if active == ThemeMode::Dark {
+            dark.style(iced::widget::button::primary)
+        } else {
+            dark
+        },
+        if active == ThemeMode::Light {
+            light.style(iced::widget::button::primary)
+        } else {
+            light
+        },
+    ]
+    .spacing(8)
 }
 
 fn top_bar(app: &PulseApp) -> Element<'_, Message> {

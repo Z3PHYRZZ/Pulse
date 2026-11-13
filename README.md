@@ -1,4 +1,4 @@
-# Pulse
+# Pulse 1.1.0
 
 Pulse is a lightweight native Windows system monitor built with Rust and Iced. It presents a
 dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray
@@ -17,7 +17,7 @@ and optional Windows startup integration.
 - **Network** — PDH upload/download byte rates across network interfaces.
 - **Processes** — Tool Help enumeration, per-process CPU deltas, working-set memory, sorting and filtering.
 - **System** — hostname, OS product name, build number, user, uptime, and total physical memory.
-- **Dashboard** — Iced Canvas sparklines, bounded 60–300 second history, eight navigation pages.
+- **Dashboard** — Iced Canvas sparklines, bounded 60–300 second history, eight navigation pages, and Dark/Light mode buttons.
 - **Windows integration** — `Shell_NotifyIconW` tray menu, minimize-to-tray, and `HKCU\...\Run` startup setting.
 - **Configuration** — TOML refresh interval, history length, process row limit, theme, and startup preferences.
 
@@ -77,11 +77,11 @@ theme = "dark"
 | `max_process_rows` | integer | Process table cap. |
 | `process_sort` | `cpu`, `memory`, `name`, `pid` | Initial process sort. |
 | `start_minimized` | bool | Launch without showing the window. |
-| `minimize_to_tray` | bool | Close button minimizes instead of exiting. |
+| `minimize_to_tray` | bool | Tray preference for Hide to tray; the window close button always exits fully. |
 | `enable_startup` | bool | Applies the HKCU Run value when saved. |
-| `theme` | `dark`, `light` | Reserved theme selector; current UI ships dark. |
+| `theme` | `dark`, `light` | Persisted by the Dark and Light buttons. |
 
-`--minimized` can be passed on the command line; the startup integration uses it.
+`--minimized` can be passed on the command line; the startup integration uses it. The window close button shuts down the monitoring engine, tray thread, and process. Use **Hide to tray** for background operation.
 
 ## Architecture
 
@@ -126,4 +126,5 @@ MIT. Copyright (c) 2026 Z3PHYRZZ. See [LICENSE](LICENSE).
 
 The full MIT text, copyright notice, and permission notice are included in this repository and
 in the Inno Setup installer.
+
 

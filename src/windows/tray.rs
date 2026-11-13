@@ -5,6 +5,7 @@ use std::thread::JoinHandle;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, POINT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::System::Threading::ExitProcess;
 use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
 };
@@ -18,6 +19,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 const TRAY_CALLBACK: u32 = WM_USER + 1;
+const TRAY_FORCE_EXIT: u32 = WM_USER + 2;
 const ID_SHOW: usize = 1001;
 const ID_HIDE: usize = 1002;
 const ID_EXIT: usize = 1003;
@@ -93,7 +95,7 @@ fn tray_loop(events: Sender<TrayEvent>, stop: Receiver<()>) -> Result<()> {
     let mut running = true;
     while running && stop.try_recv().is_err() {
         while unsafe { PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE) }.as_bool() {
-            if msg.message == WM_QUIT {
+            if msg.message == WM_QUIT || msg.message == TRAY_FORCE_EXIT {
                 running = false;
                 break;
             }
@@ -117,7 +119,8 @@ fn tray_loop(events: Sender<TrayEvent>, stop: Receiver<()>) -> Result<()> {
             };
             if let Some(event) = command {
                 let is_exit = event == TrayEvent::Exit;
-                if events.send(event).is_err() || is_exit {
+                let _ = events.send(event);
+                if is_exit {
                     running = false;
                     break;
                 }
@@ -198,6 +201,10 @@ fn icon_data(hwnd: HWND, icon: HICON) -> NOTIFYICONDATAW {
         data.szTip[index] = unit;
     }
     data
+}
+
+pub fn force_exit() -> ! {
+    unsafe { ExitProcess(0) }
 }
 
 fn load_pulse_icon() -> Result<HICON> {

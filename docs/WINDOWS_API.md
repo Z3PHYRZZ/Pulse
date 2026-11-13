@@ -16,7 +16,7 @@
 | Uptime | `GetTickCount64` | Milliseconds since boot. |
 | OS version | Registry `HKLM\...\CurrentVersion` | `ProductName`, `CurrentBuild`. |
 | Startup | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | `REG_SZ` with quoted executable and `--minimized`. |
-| Tray | `Shell_NotifyIconW` + message-only `HWND_MESSAGE` | Callback routed through `WM_USER + 1`. |
+| Tray | `Shell_NotifyIconW` + message-only `HWND_MESSAGE` | Callback routed through `WM_USER + 1`. The window close button uses full process shutdown; Hide to tray minimizes. |
 
 All raw Win32 calls are confined to `src/collectors`, `src/windows`, and the API smoke tests.
 `@;
@@ -52,3 +52,4 @@ Name: "startupicon"; Description: "Start Pulse with Windows"; GroupDescription: 
 
 [Run]
 Filename: "{app}\pulse.exe"; Description: "Launch Pulse"; Flags: nowait postinstall skipifsilent
+

@@ -16,3 +16,10 @@
 - Benchmark mode and persistent resource history.
 - Custom overlay themes.
 - Toast notifications through `windows::UI::Notifications` instead of the tracing seam.
+
+## v1.1.0
+
+- Close button now performs a full shutdown; background operation is explicit through Hide to tray.
+- Dark and Light mode buttons persist the 	heme config value.
+- Engine shutdown is responsive instead of waiting for an entire refresh sleep.
+

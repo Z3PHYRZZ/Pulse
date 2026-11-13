@@ -1,6 +1,6 @@
 [Setup]
 AppName=Pulse
-AppVersion=0.1.0
+AppVersion=1.1.0
 AppPublisher=Z3PHYRZZ
 AppPublisherURL=https://github.com/Z3PHYRZZ/Pulse
 DefaultDirName={autopf}\Pulse
@@ -30,3 +30,4 @@ Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Ad
 
 [Run]
 Filename: "{app}\pulse.exe"; Description: "Launch Pulse"; Flags: nowait postinstall skipifsilent
+
