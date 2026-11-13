@@ -78,23 +78,31 @@ out intermittently on long execution calls; short read-only git commands land.
   `Pulse v2.0.3` with asset `Pulse-2.0.3-portable-win-x64.exe`.
 - Inno Setup installer NOT rebuilt (Inno Setup not installed) — noted in release.
 
-## 0% utilization bug — DONE (2026-11-13 21:56, under same 2.0.3)
+## 0% utilization bug — FIXED & SHIPPED (2026-11-13, same 2.0.3)
 Root cause (verified with a throwaway `pulse-core/examples/probe.rs`, deleted after):
 `window.__TAURI_INTERNALS__.listen` does NOT exist in Tauri 2 (confirmed against
 installed `tauri-2.12.5` scripts). `startMetricListener()` bailed on `if(!listen)return`,
 so the UI froze on the single boot-time `latest_sample()` — the un-warmed 0% first
 sample. PDH rate counters also need two collections before yielding a value.
-Fixes:
+Fixes (commit 26c3f9b):
 - `frontend/app.js`: raw `plugin:event|listen` subscription via `transformCallback`
-  (target `{kind:"Any"}`), plus a 1s `latest_sample` polling fallback so metrics
-  never freeze. `node --check` passes.
+  (target `{kind:"Any"}`), guarded on `transformCallback` presence, plus a 1s
+  `latest_sample` polling fallback so metrics never freeze. `node --check` passes.
 - `pulse-core/src/collectors/pdh.rs`: `PdhQuery::warm_up()` — short bounded collects
   until a rate counter yields a value; called in cpu/disk/network `new()`.
 - Verified: probe sample 0 = 4.9% (was 0%), later samples real; `cargo check`,
   `cargo test` (2 config + 3 smoke), `cargo build --release -p pulse` all EXIT=0.
+- Pushed `8408f02..26c3f9b` (amend over 509c369), CI success on 26c3f9b.
+- GitHub Release `Pulse v2.0.3` asset `Pulse-2.0.3-portable-win-x64.exe`
+  re-uploaded (5,892,608 bytes) with `--clobber`; release notes updated.
+
+## State — ALL DONE
+- `main == origin/main == 26c3f9b`, working tree clean.
+- GitHub Actions: all recent runs success (26c3f9b, 509c369, 8408f02).
+- v2.0.3 Release public, portable exe current. Inno Setup installer not rebuilt
+  (Inno Setup not installed) — noted in release.
+- AI-Brain session log appended at `Sessions/2026-11-13.md` (21:56 entry).
 
 ## Next steps
-1. Commit the 0% fix (5 files + SUMMARY.md), push to origin/main.
-2. Rebuild + re-upload `Pulse-2.0.3-portable-win-x64.exe` to the existing v2.0.3
-   Release (same version, `--clobber`).
-3. Confirm CI green; update this file after each major step.
+None outstanding. If the Inno Setup installer is wanted later, install Inno Setup 6
+and run `iscc installer/pulse.iss`, then upload the setup exe to the v2.0.3 release.
