@@ -1,6 +1,6 @@
 [Setup]
 AppName=Pulse
-AppVersion=2.0.3
+AppVersion=2.0.4
 AppPublisher=Z3PHYRZZ
 AppPublisherURL=https://github.com/Z3PHYRZZ/Pulse
 DefaultDirName={autopf}\Pulse

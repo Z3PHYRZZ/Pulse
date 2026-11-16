@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] — 2026-11-16
+### Changed
+- Rebuilt the desktop interface with React 19, TypeScript, and Meta Astryx's accessible Neutral light/dark theme.
+- Preserved all eight monitoring pages, live graphs, process filtering/sorting, settings, theme persistence, and native tray/close behavior.
+- Added React rendering that retains process-filter focus and timestamp deduplication for the metric stream and polling fallback.
+- Bundled Figtree locally under the SIL Open Font License; production makes no external font requests.
+
+### Build
+- Added pinned Vite/StyleX tooling, a lockfile, frontend tests, and CI typecheck/test/production-build steps.
+- Verified TypeScript, 10 frontend tests, 5 Rust tests, production build, Tauri packaging, and a zero-vulnerability npm audit.
+
+### Downloads
+- `Pulse-2.0.4-portable-win-x64.exe` — standalone Tauri executable.
+- `Pulse-2.0.4-setup-win-x64.exe` — NSIS installer.
+- `Pulse-2.0.4-x64.msi` — MSI installer.
+
+
 ## [2.0.3] — 2026-11-13
 ### Fixed
 - Dropped the archived `legacy-iced` (Iced 0.13) crate from the workspace so CI no longer builds a dead dependency tree.

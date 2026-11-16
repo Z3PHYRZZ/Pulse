@@ -1,3 +1,23 @@
+# Pulse — v2.0.4 release (2026-11-16)
+
+## Goal
+Publish the merged Astryx React UI as GitHub Release v2.0.4 with portable, NSIS, and MSI assets; preserve v2.0.3 unchanged.
+
+## Key IDs / paths
+- UI merge: `origin/main` `2fadbe4` (PR #1).
+- Release branch: `release/v2.0.4` in `.claude/worktrees/astryx-ui`.
+- Existing release: v2.0.3 remains untouched.
+
+## Done
+- Updated Cargo workspace/Tauri/package/installer/default-config/README versions to 2.0.4; added changelog.
+- First full release build produced correctly versioned 2.0.4 portable, NSIS, and MSI artifacts.
+- Release typecheck/tests exit 0; npm audit 0 vulnerabilities.
+
+## Next
+- Commit release metadata immediately, rebuild final tag artifacts, smoke-run 2.0.4, push/tag, publish release and verify remote hashes.
+
+---
+
 # Pulse — Astryx React UI migration (2026-11-16)
 
 ## Goal
