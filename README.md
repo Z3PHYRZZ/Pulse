@@ -1,6 +1,6 @@
-# Pulse 2.0.2
+# Pulse 2.0.3
 
-Pulse is a lightweight native Windows system monitor built with Tauri 2, Rust, and a raw HTML/CSS/JS frontend. It presents a
+Pulse is a lightweight native Windows system monitor built with Tauri 2, Rust, React 19, and Meta's Astryx design system. It presents a
 dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray
 and optional Windows startup integration.
 
@@ -17,9 +17,9 @@ and optional Windows startup integration.
 - **Network** — PDH upload/download byte rates across network interfaces.
 - **Processes** — Tool Help enumeration, per-process CPU deltas, working-set memory, sorting and filtering.
 - **System** — hostname, OS product name, build number, user, uptime, and total physical memory.
-- **Dashboard** — raw SVG sparklines, bounded 60–300 second history, eight navigation pages, and Dark/Light mode buttons.
-- **Pulse palette** — deep navy surfaces, slate-blue cards, ice-blue controls, restrained copper warnings, thin identity-colored borders, consistent rounded corners, and smooth low-weight graphs. CPU, RAM, GPU, disk, and network each carry a distinct visual identity.
-- **Windows integration** — `Shell_NotifyIconW` tray menu, minimize-to-tray, and `HKCU\...\Run` startup setting.
+- **Dashboard** — accessible Astryx components, local SVG sparklines, configurable bounded history, eight navigation pages, and Neutral Dark/Light themes.
+- **Interface** — locally hosted Figtree typography, semantic status colors, tabular metrics, keyboard focus, reduced-motion support, and responsive navigation.
+- **Windows integration** — Tauri tray menu with Show, Hide, and Exit, explicit hide-to-tray, and `HKCU\...\Run` startup setting.
 - **Configuration** — TOML refresh interval, history length, process row limit, theme, and startup preferences.
 
 Temperature is reported only when a vendor API exposes it. Standard Windows performance APIs do
@@ -28,24 +28,23 @@ not guarantee CPU temperature, and DXGI does not expose utilization or temperatu
 
 ## Download
 
-Prebuilt Windows x64 binaries are published on the [v2.0.2 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.0.2).
+Prebuilt Windows x64 binaries are published on the [v2.0.3 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.0.3).
 
 | File | Use |
 |---|---|
-| `Pulse-2.0.2-setup-win-x64.exe` | Installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
-| `Pulse-2.0.2-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
+| `Pulse-2.0.3-setup-win-x64.exe` | Installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
+| `Pulse-2.0.3-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
 
 The installer and portable executable target Windows 10/11 x86_64. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll`; CPU/GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
 ## Design
 
-Pulse keeps a fixed palette: `#0D1821` main background, `#142333` sidebar, `#344966` cards, `#F0F4EF` primary text, `#B4CDED` secondary text and primary buttons, `#0D1821` button text, `#B86F52` copper highlights, and `#52677E` borders.
-
-The Tauri frontend follows the linked anti-polish / raw aesthetic: scanned grain, lowercase headings, wobbly uneven card outlines, hard-step jitter, no smooth transitions, visible dashed focus, and rough hand-written spacing. Copper is reserved for collector warnings and temperatures at or above 80 °C. CPU, RAM, GPU, disk, and network keep separate accent identities.
+Pulse uses Astryx's Neutral light/dark theme and actual Astryx React components. Five categorical accents distinguish CPU, memory, GPU, disk, and network graphs. Figtree is served locally under the SIL Open Font License; production needs no CDN or external font connection.
 ## Build
 
 Requirements:
 
 - Windows 10 or Windows 11, x86_64.
+- Node.js 22+ and npm.
 - Rust 1.80+ with the `x86_64-pc-windows-msvc` target.
 - Visual Studio Build Tools with the MSVC linker.
 - Optional: NVIDIA driver with `nvml.dll` for full GPU telemetry.
@@ -54,7 +53,9 @@ Requirements:
 ```powershell
 git clone https://github.com/Z3PHYRZZ/Pulse.git
 cd Pulse
-npm install
+npm ci
+npm run typecheck
+npm test
 npm run tauri build
 .\target\release\pulse.exe
 ```
@@ -104,7 +105,8 @@ theme = "dark"
 
 ```text
 Pulse Application
-├── Iced GUI
+├── React + Astryx GUI (src/, generated dist/)
+├── Tauri 2 shell (src-tauri/)
 ├── Monitoring Engine
 │   ├── Scheduler
 │   └── Aggregator
@@ -119,7 +121,8 @@ Pulse Application
 ```
 
 Each collector implements the `Collector` trait and writes into one `MetricSample`. The engine
-runs on a dedicated OS thread and sends samples over a Tokio channel into an Iced subscription.
+runs on a dedicated OS thread and sends samples over a Tokio channel into the Tauri `pulse://metrics` event stream.
+The React frontend uses the official Tauri API, with a one-second `latest_sample` fallback and timestamp deduplication.
 The GUI never calls Win32 directly. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 [docs/WINDOWS_API.md](docs/WINDOWS_API.md), and [docs/ROADMAP.md](docs/ROADMAP.md).
 

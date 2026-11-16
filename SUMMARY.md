@@ -1,4 +1,28 @@
-# Pulse — fix broken build and push (2026-11-13)
+# Pulse — Astryx React UI migration (2026-11-16)
+
+## Goal
+Replace the live raw HTML/CSS/JS UI with the user-approved React 19 + actual Meta Astryx Neutral design while preserving all Tauri/Rust monitoring and native tray/close behavior.
+
+## Key paths
+- Branch/worktree: `worktree-astryx-ui`, `.claude/worktrees/astryx-ui/`
+- Live source: `src/`, `index.html`, `vite.config.ts`; generated `dist/` via `frontendDist`.
+- Backend unchanged: `pulse-core/`, `src-tauri/src/`.
+- Approved plan: `C:/Users/Dodot/.claude/plans/read-the-entire-codebase-wobbly-sky.md`.
+
+## Done
+- All eight views and controls ported to Astryx `AppShell`, `SideNav`, cards, inputs, switch, table, and Neutral light/dark theme.
+- Tauri official invoke/listen API; fallback poll; timestamp dedupe and stale rejection; configured history and initial process sort; settings validation and errors.
+- Local Figtree TTFs + OFL license; no CDN; old raw frontend removed; CI installs/builds/tests frontend.
+- Verified: TypeScript pass, 10/10 Vitest tests pass with clean exit, Vite production build pass, clean `npm ci`, Cargo check/test, two complete `npm run tauri build` package builds. `npm audit` → 0 vulnerabilities.
+- Real WebView2 run: overview live metrics, Processes sorting/table, Settings inputs/startup switch, light/dark persistence all inspected via screenshots. CDP geometry confirms no horizontal overflow at 1180px; earlier native screenshot cropping was a capture artifact.
+- Fixed screenshot readability (wrap card details) and page-specific Settings/Processes subtitles; separated Vitest config to remove StyleX plugin's lingering test handle.
+
+## Next
+Independent review complete: no Critical findings; the Important CI production-build omission was fixed (`npm run build` after tests). Final CI-equivalent verification passed: TypeScript, 10/10 frontend tests, Vite build, cargo check, 5/5 Rust tests, npm audit 0. Minor deferred items are recorded in the execution ledger. Migration committed and pushed to `origin/worktree-astryx-ui`; `main` is unchanged. No release created.
+
+---
+
+# Previous work — fix broken build and push (2026-11-13)
 
 ## Goal
 "lot of thing broken fix it and push to github" — get the Tauri 2 Pulse workspace
