@@ -11,6 +11,18 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install frontend
+        run: npm ci
+      - name: Check frontend
+        run: npm run typecheck
+      - name: Test frontend
+        run: npm test
+      - name: Build frontend
+        run: npm run build
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc

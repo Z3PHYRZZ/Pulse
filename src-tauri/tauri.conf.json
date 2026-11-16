@@ -4,7 +4,10 @@
   "version": "2.0.3",
   "identifier": "com.zephyrzz.pulse",
   "build": {
-    "frontendDist": "../frontend"
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
@@ -32,6 +35,6 @@
     "copyright": "Copyright © Z3PHYRZZ",
     "category": "Utility",
     "shortDescription": "Native Windows system monitor",
-    "longDescription": "Pulse is a native Windows system monitor built with Tauri, Rust and a raw anti-polish interface."
+    "longDescription": "Pulse is a native Windows system monitor built with Tauri, Rust and an accessible React interface."
   }
 }
