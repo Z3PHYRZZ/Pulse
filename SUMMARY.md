@@ -1,16 +1,15 @@
 # Pulse — Universal GPU + Snapdragon detection (2026-11-18)
 
 ## Goal
-Replace NVIDIA-only GPU detection with universal multi-vendor detection (Intel, AMD, NVIDIA, integrated, multiple adapters) plus Snapdragon/ARM64 CPU and GPU (Adreno) recognition. Then push, bump release, update README.
+Universal GPU detection (Intel/AMD/NVIDIA/integrated/multi-adapter/Adreno) + Snapdragon CPU support, then Linux support with an AppImage build.
 
 ## Key paths
-- Live engine: `pulse-core/src/` — `collectors/gpu.rs`, `collectors/cpu.rs`, `collectors/system.rs`, `engine/aggregator.rs`, `models/metrics.rs`, `models/system.rs`
-- Live app: `src-tauri/src/lib.rs` (serializes MetricSample directly — no bridge change needed)
-- Live frontend: `src/types.ts`, `src/pages/Hardware.tsx`, `src/pages/Overview.tsx`, `src/lib/metrics.ts` + tests
-- NOTE: `src/*.rs` is the DEAD Iced copy — do NOT edit. `src/*.tsx` is live React — edit it.
-- Build/version: root `Cargo.toml`, `src-tauri/tauri.conf.json`, `package.json`, `config.default.toml`, `installer/pulse.iss`, `CHANGELOG.md`, `README.md`
-- Windows bindings: `windows` 0.62.2 (`Win32_Graphics_Dxgi`, `Win32_System_Performance`, `Win32_System_SystemInformation` already enabled)
-- Remote: `https://github.com/Z3PHYRZZ/Pulse.git` (origin), branch `main`
+- Live engine: `pulse-core/src/` — Windows collectors + `collectors/linux_impl.rs`, `linux/desktop.rs`, `collectors/mod.rs` platform facade
+- Live app: `src-tauri/src/lib.rs`; `src-tauri/tauri.conf.json` bundles msi/nsis/appimage
+- Live frontend: `src/*.tsx` (the `src/*.rs` files are the dead Iced copy)
+- Version files: root `Cargo.toml`, `src-tauri/tauri.conf.json`, `package.json`, `config.default.toml`, `installer/pulse.iss`
+- CI: `.github/workflows/windows.yml`, `.github/workflows/linux.yml`
+- Remote: origin `https://github.com/Z3PHYRZZ/Pulse.git`, branch `main`
 
 ## Design
 - `GpuMetrics` gains `vendor: String` (enum-ish label), `id: String` (LUID hex), `dedicated_system_bytes`, `shared_system_bytes`, `is_integrated: bool`, `architecture: String` (e.g. Adreno). Existing fields kept.
@@ -22,17 +21,14 @@ Replace NVIDIA-only GPU detection with universal multi-vendor detection (Intel, 
 - Frontend: `GpuMetrics` gains matching fields + `MetricSample.gpus`. Graphics page renders one card per adapter with vendor badge; Overview keeps primary summary. History uses primary `gpu`.
 
 ## Done
-- Full codebase read: engine, bridge, frontend, build config, tests, docs, FFI signatures verified against windows-0.62.2 source
-- Backend: multi-vendor GPU detection (DXGI all adapters, multi-device NVML, PDH fallback), Snapdragon/ARM64 CPU detection, vendor-ID unit tests
-- Frontend: per-adapter cards, vendor/architecture display, adapter count, updated types and tests
-- Version bumped to 2.1.0 everywhere; all six tracked Markdown files updated (README, CHANGELOG, SUMMARY, ARCHITECTURE, WINDOWS_API, ROADMAP)
-- All checks green: cargo test --workspace, tsc --noEmit, vitest run, vite build, full Tauri release build
-- PR #2 merged to main; docs commit b8dfd25 pushed to main
-- Tag v2.1.0 pushed; GitHub release v2.1.0 created with portable exe, NSIS installer, and MSI plus SHA-256 hashes
-- Working tree clean, main in sync with origin
+- v2.1.0: universal GPU detection, Snapdragon support, per-adapter UI, docs, PR #2 merged, release published
+- v2.2.0 Linux: per-OS collector facade, procfs/sysfs collectors, XDG autostart, Linux PNG icons, `linux.yml` AppImage CI
+- Verified: Windows cargo check/test/release build, frontend typecheck/tests/build, Linux cargo check for pulse-core (x86_64-unknown-linux-gnu), Linux GitHub Actions run 44267077109 green producing `Pulse_2.2.0_amd64.AppImage` (SHA-256 50447AF379A348A81A054B0B8362EBA5BE146385501C077499C9DA7706770A59)
+- Committed `ea8ce5c` and pushed to main
 
 ## Next
-- None outstanding. Future work from ROADMAP: threshold alerts, benchmark mode, persistent history, custom overlay themes, toast notifications.
+- Create v2.2.0 GitHub release with AppImage and refreshed Windows binaries
+- Windows Tauri bundle build in progress locally
 
 ## Decisions / notes
 - Keep `MetricSample.gpu` for backward compatibility so the Tauri bridge and history code need no structural change.
