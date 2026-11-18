@@ -12,14 +12,14 @@ Pulse workspace
 │   │   ├── scheduler.rs — dedicated OS thread, configurable interval
 │   │   └── aggregator.rs — collector fan-out and warning aggregation
 │   ├── collectors/
-│   │   ├── cpu.rs — PDH `% Processor Time`, registry nominal frequency
+│   │   ├── cpu.rs — PDH `% Processor Time`, registry nominal frequency, native architecture
 │   │   ├── memory.rs — GlobalMemoryStatusEx
-│   │   ├── gpu.rs — dynamic NVML + DXGI identity/VRAM fallback
+│   │   ├── gpu.rs — all-adapter DXGI enumeration + multi-device NVML + PDH GPU Engine
 │   │   ├── disk.rs — PDH LogicalDisk throughput + GetDiskFreeSpaceExW
 │   │   ├── network.rs — PDH Network Interface byte rates
 │   │   ├── processes.rs — Tool Help snapshot + GetProcessTimes + GetProcessMemoryInfo
-│   │   └── system.rs — hostname, OS registry values, core count, uptime
-│   ├── models/ — MetricSample, SystemInfo, ProcessInfo
+│   │   └── system.rs — hostname, OS registry values, core count, uptime, CPU name/architecture
+│   ├── models/ — MetricSample (gpu + gpus), SystemInfo, ProcessInfo, GpuVendor
 │   ├── config/ — config.toml load/save (ConfigState), theme
 │   └── windows/ — startup (HKCU Run), close hook, notifications
 ├── src-tauri/                      Tauri 2 desktop shell (binary `pulse`)
@@ -57,5 +57,33 @@ windowing; `pulse-core::windows` holds startup integration and the close-hook he
 - Configurable cadence: `refresh_ms` defaults to 1000 and is clamped to 250–10000 ms.
 - Graceful degradation: failed collectors add warnings rather than killing the app.
 - Optional telemetry: CPU and GPU temperature are only reported when a driver path exists.
+
+### GPU detection pipeline
+
+`GpuCollector::new` enumerates every DXGI adapter once and caches the stable identity: name,
+PCI vendor/device ID, LUID-based id, dedicated VRAM, shared system memory, and an integrated flag.
+Vendor IDs map to NVIDIA (`0x10DE`), Intel (`0x8086`), AMD (`0x1002`/`0x1022`), Qualcomm
+(`0x5143`), and Microsoft (`0x1414`). This covers discrete, integrated, and ARM64 Adreno GPUs in
+one adapter list.
+
+Telemetry is layered on each collection tick:
+
+1. NVML devices are loaded once from `%SystemRoot%\System32\nvml.dll` (absolute path) and bound
+   to NVIDIA adapters by ordinal. Each tick reads utilization, memory, and temperature per device.
+2. A PDH `GPU Engine(*)` wildcard counter supplies utilization for adapters without NVML
+   telemetry. Instance names are matched against the adapter name; on a single-adapter system all
+   engine values are attributed to that adapter.
+3. DXGI memory values remain the baseline; values unavailable from every source stay `None` and
+   serialize as `n/a` in the UI.
+
+`MetricSample.gpus` carries the full adapter list. `MetricSample.gpu` keeps the primary adapter
+(first discrete, else first) for compatibility with the Overview and history channels.
+
+### CPU architecture
+
+`SystemCollector` uses `GetNativeSystemInfo` so ARM64 hosts report the true native architecture
+even when the process runs under emulation. The processor name is read from
+`HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0`. Both values are copied into each sample's
+`CpuMetrics` by `system::ensure`.
 - Close exits fully: `prevent_close()` + `app.exit(0)` on `CloseRequested`; hide-to-tray
   is an explicit command, not an implicit minimize.
