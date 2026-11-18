@@ -1,8 +1,8 @@
-# Pulse 2.1.0
+# Pulse 2.2.0
 
-Pulse is a lightweight native Windows system monitor built with Tauri 2, Rust, React 19, and Meta's Astryx design system. It presents a dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray and optional Windows startup integration.
+Pulse is a lightweight native system monitor for Windows and Linux, built with Tauri 2, Rust, React 19, and Meta's Astryx design system. It presents a dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray and optional startup integration.
 
-![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)
 ![Architectures](https://img.shields.io/badge/architecture-x64%20%7C%20ARM64-blueviolet)
 ![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -47,17 +47,41 @@ NVML is loaded by absolute path from `%SystemRoot%\System32\nvml.dll`, so a DLL 
 
 CPU architecture comes from `GetNativeSystemInfo` (the true native view, not the WOW64 emulation view), so Snapdragon/ARM64 hosts report `ARM64` and the registry processor name, such as Snapdragon X Elite, is shown directly. Values unavailable from every source stay `n/a`.
 
+### Linux telemetry sources
+
+On Linux the collectors read procfs and sysfs directly. No helper daemon or privileged service is required.
+
+| Metric | Source |
+|---|---|
+| CPU usage / per-core | `/proc/stat` deltas |
+| CPU frequency | `/proc/cpuinfo` |
+| Memory | `/proc/meminfo` (`MemAvailable` when present) |
+| Disk I/O and volumes | `/proc/diskstats` and `statvfs` |
+| Network | `/proc/net/dev` |
+| Processes | `/proc/<pid>/stat`, `statm`, and `comm` |
+| CPU temperature | `/sys/class/thermal/thermal_zone*/temp` |
+| GPU identity and VRAM | `/sys/class/drm/card*/device` (PCI vendor/device IDs, `mem_info_vram_*`) |
+| GPU utilization | `gpu_busy_percent` in DRM sysfs, or NVML for NVIDIA |
+| GPU temperature | `/sys/class/hwmon/hwmon*/temp*_input` matched by sensor name, or NVML |
+| Architecture | Native target architecture with Snapdragon/aarch64 recognition |
+| Startup | XDG `~/.config/autostart` desktop entry |
+
+NVML is loaded from absolute system paths only (`/usr/lib*/libnvidia-ml.so.1`), avoiding `LD_LIBRARY_PATH` hijacking. Values a kernel or driver does not expose stay `n/a`.
+
 ## Download
 
-Prebuilt Windows x64 binaries are published on the [v2.1.0 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.1.0).
+Prebuilt Windows x64 and Linux x64 binaries are published on the [v2.2.0 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.2.0).
 
 | File | Use |
 |---|---|
-| `Pulse-2.1.0-setup-win-x64.exe` | x64 installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
-| `Pulse-2.1.0-x64.msi` | x64 MSI installer for managed deployment. |
-| `Pulse-2.1.0-portable-win-x64.exe` | Standalone x64 `pulse.exe`; no installer required. |
+| `Pulse-2.2.0-setup-win-x64.exe` | x64 installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
+| `Pulse-2.2.0-x64.msi` | x64 MSI installer for managed deployment. |
+| `Pulse-2.2.0-portable-win-x64.exe` | Standalone x64 `pulse.exe`; no installer required. |
+| `Pulse-2.2.0-x64.AppImage` | Portable Linux x64 AppImage; no installation required, works on most glibc distributions. |
 
-The published binaries target Windows 10/11 x64. The engine also builds and runs on Windows ARM64 (Snapdragon), detecting the native architecture and Adreno GPUs through DXGI. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll` in `%SystemRoot%\System32`; PDH GPU Engine utilization needs the GPU performance counters present on Windows 10/11. CPU and GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
+The published binaries target Windows 10/11 x64 and Linux x64. The engine also builds on Windows ARM64 (Snapdragon) and Linux aarch64, detecting the native architecture through `GetNativeSystemInfo` or `uname`-equivalent data. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll` (Windows) or `libnvidia-ml.so.1` (Linux). CPU and GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
+
+The Linux AppImage bundles the application and all userspace libraries; it needs only a glibc-based x64 distribution with WebKit2GTK 4.1 available from the host. Run it with `chmod +x Pulse-2.2.0-x64.AppImage && ./Pulse-2.2.0-x64.AppImage`.
 
 ## Design
 
@@ -67,12 +91,13 @@ Pulse uses Astryx's Neutral light/dark theme and actual Astryx React components.
 
 Requirements:
 
-- Windows 10 or Windows 11, x64 or ARM64 (Snapdragon).
+- Windows 10/11 (x64 or ARM64/Snapdragon) or Linux (x64 or aarch64).
 - Node.js 22+ and npm.
-- Rust 1.80+ with the `x86_64-pc-windows-msvc` target, or `aarch64-pc-windows-msvc` for ARM64.
+- Rust 1.80+ with the target for your platform (`x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`, or `aarch64-unknown-linux-gnu`).
 - Visual Studio Build Tools with the MSVC linker.
 - Optional: NVIDIA driver with `nvml.dll` in `%SystemRoot%\System32` for full NVIDIA GPU telemetry.
-- Optional: Inno Setup 6 (`iscc`) for the installer.
+- On Linux: `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libxdo-dev`, `libssl-dev`, and `pkg-config` (the Linux CI workflow installs the full set).
+- Optional: Inno Setup 6 (`iscc`) for the Windows installer.
 
 ```powershell
 git clone https://github.com/Z3PHYRZZ/Pulse.git

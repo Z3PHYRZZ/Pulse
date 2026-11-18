@@ -1,10 +1,11 @@
 // language: Rust, file: lib.rs, target: Windows 11 x86_64, edition 2021
+#[cfg(target_os = "windows")]
 mod close;
 
 use pulse_core::config::{Config, ConfigState, ThemeMode};
 use pulse_core::engine::EngineHandle;
 use pulse_core::models::MetricSample;
-use pulse_core::windows::startup;
+use pulse_core::startup;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use tauri::{
@@ -193,6 +194,7 @@ pub fn run() {
                 .ok_or_else(|| "metrics receiver already taken".to_string())?;
             start_metric_stream(app.handle().clone(), metrics_receiver, latest_sample);
             build_tray(app.handle())?;
+            #[cfg(target_os = "windows")]
             close::install_close_hook();
             let window = app
                 .get_webview_window("main")

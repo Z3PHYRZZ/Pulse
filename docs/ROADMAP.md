@@ -9,6 +9,7 @@
 | 5 | Native system tray, minimize-to-tray, HKCU startup setting | Complete |
 | 6 | Release profile, Inno Setup script, MIT compliance, README, CI | Complete |
 | 7 | Universal multi-vendor GPU detection, multi-adapter UI, Snapdragon/ARM64 CPU support | Complete |
+| 8 | Linux procfs/sysfs collectors, XDG autostart, AppImage CI | Complete |
 
 ## Deferred
 
@@ -17,6 +18,12 @@
 - Benchmark mode and persistent resource history.
 - Custom overlay themes.
 - Toast notifications through `windows::UI::Notifications` instead of the tracing seam.
+
+## v2.2.0
+
+- Linux support with procfs/sysfs collectors behind a per-OS facade.
+- AppImage bundling via Tauri and GitHub Actions; PNG icons for Linux packaging.
+- XDG autostart replaces the registry Run key on Linux.
 
 ## v2.1.0
 

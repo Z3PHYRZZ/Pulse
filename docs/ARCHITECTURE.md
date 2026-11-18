@@ -87,3 +87,14 @@ even when the process runs under emulation. The processor name is read from
 `CpuMetrics` by `system::ensure`.
 - Close exits fully: `prevent_close()` + `app.exit(0)` on `CloseRequested`; hide-to-tray
   is an explicit command, not an implicit minimize.
+
+## Platform architecture
+
+Collector implementations are selected by `#[cfg(target_os)]`. `pulse-core/src/collectors/mod.rs`
+exposes a single `platform` facade with identical collector names and signatures, so the
+aggregator and engine are platform-neutral. Windows uses `collectors/{cpu,gpu,...}.rs` and
+`windows/` (registry startup, Win32 tray, close hook). Linux uses `collectors/linux_impl.rs`
+(procfs/sysfs) and `linux/desktop.rs` (XDG autostart); Tauri owns the Linux status item.
+
+Linux bindings use only `libc` for `sysconf` and `statvfs`; all other data comes from plain text
+`/proc` and `/sys` reads. The Windows crate is compiled only on Windows targets.

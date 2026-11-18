@@ -2450,7 +2450,7 @@ dependencies = [
 
 [[package]]
 name = "pulse"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "anyhow",
  "pulse-core",
@@ -2466,11 +2466,12 @@ dependencies = [
 
 [[package]]
 name = "pulse-core"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "anyhow",
  "chrono",
  "dirs",
+ "libc",
  "libloading 0.9.0",
  "serde",
  "tokio",

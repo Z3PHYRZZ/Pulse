@@ -1,10 +1,10 @@
-use crate::collectors::cpu::CpuCollector;
-use crate::collectors::disk::DiskCollector;
-use crate::collectors::gpu::GpuCollector;
-use crate::collectors::memory::MemoryCollector;
-use crate::collectors::network::NetworkCollector;
-use crate::collectors::processes::ProcessCollector;
-use crate::collectors::system::{apply_uptime, ensure};
+use crate::collectors::platform::CpuCollector;
+use crate::collectors::platform::DiskCollector;
+use crate::collectors::platform::GpuCollector;
+use crate::collectors::platform::MemoryCollector;
+use crate::collectors::platform::NetworkCollector;
+use crate::collectors::platform::ProcessCollector;
+use crate::collectors::platform::{apply_uptime, ensure};
 use crate::collectors::Collector;
 use crate::config::Config;
 use crate::models::{MetricSample, SystemInfo};
@@ -23,6 +23,7 @@ pub struct Aggregator {
 impl Aggregator {
     pub fn new(_config: Config, system: &SystemInfo) -> Result<Self> {
         let cpu = CpuCollector::new(system.logical_cores).context("CPU collector")?;
+        #[allow(unused_mut)]
         let mut gpu = GpuCollector::new(system.total_memory_bytes).context("GPU collector")?;
         let probe = gpu.primary();
         let mut warnings = Vec::new();

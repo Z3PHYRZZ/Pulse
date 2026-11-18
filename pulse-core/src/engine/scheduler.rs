@@ -1,4 +1,4 @@
-use crate::collectors::system::SystemCollector;
+use crate::collectors::platform::read_system_info;
 use crate::config::{Config, ConfigState};
 use crate::engine::aggregator::Aggregator;
 use crate::models::{MetricSample, SystemInfo};
@@ -22,7 +22,7 @@ pub struct EngineHandle {
 
 impl EngineHandle {
     pub fn start(config: ConfigState) -> Result<Self> {
-        let system = Arc::new(SystemCollector::new()?.info().clone());
+        let system = Arc::new(read_system_info()?);
         let config = Arc::new(config);
         let aggregator = Aggregator::new(config.get(), &system)?;
         let (sender, receiver) = mpsc::unbounded_channel();

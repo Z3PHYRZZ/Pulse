@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] — 2026-11-18
+### Added
+- Linux support with a portable AppImage build: per-OS collectors behind a platform facade, leaving Windows behavior unchanged.
+- Linux CPU, memory, disk, network, process, system, and GPU collectors backed by `/proc` and `/sys` with no helper daemon.
+- Linux GPU enumeration through `/sys/class/drm` for NVIDIA, Intel, AMD, integrated, and Adreno adapters, with NVML for NVIDIA and `gpu_busy_percent`/hwmon telemetry for others.
+- XDG autostart on Linux; HKCU Run on Windows.
+- Linux PNG icons and a GitHub Actions workflow producing an AppImage artifact.
+- Hardware-independent Linux collector unit tests.
+
 ## [2.1.0] — 2026-11-18
 ### Added
 - Universal GPU detection: every DXGI adapter is enumerated, covering NVIDIA, Intel, AMD, integrated graphics, multiple simultaneous GPUs, and Qualcomm Adreno on Snapdragon.
