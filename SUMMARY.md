@@ -22,14 +22,18 @@ Replace NVIDIA-only GPU detection with universal multi-vendor detection (Intel, 
 - Frontend: `GpuMetrics` gains matching fields + `MetricSample.gpus`. Graphics page renders one card per adapter with vendor badge; Overview keeps primary summary. History uses primary `gpu`.
 
 ## Done
-- (in progress) full codebase read: engine, bridge, frontend, build config, tests, docs, FFI signatures verified against windows-0.62.2 source
+- Full codebase read: engine, bridge, frontend, build config, tests, docs, FFI signatures verified against windows-0.62.2 source
+- Backend implemented: multi-vendor GPU detection (DXGI all adapters, multi-device NVML, PDH fallback), Snapdragon/ARM64 CPU detection, vendor-ID unit tests
+- Frontend implemented: per-adapter cards, vendor/architecture display, adapter count, updated types and tests
+- Version bumped to 2.1.0 everywhere; README + CHANGELOG updated
+- All checks green: cargo test --workspace, tsc --noEmit, vitest run, vite build
+- Committed as `98af95b` on branch `feature/universal-gpu-detection`, pushed to origin
+- PR opened: https://github.com/Z3PHYRZZ/Pulse/pull/2 (base main) — awaiting review
 
 ## Next
-1. Backend: metrics model + system info + gpu collector rewrite + cpu architecture + aggregator + tests
-2. Frontend: types + pages + metrics + tests
-3. Verify: cargo check/test, npm typecheck/test/build
-4. Bump version everywhere, CHANGELOG, README
-5. Commit + push + create/update GitHub release with rebuilt portable binary if toolchain permits
+1. Review PR #2, address feedback
+2. After approval: merge to main, create v2.1.0 GitHub release with built artifacts
+3. Update README release links if tag changes
 
 ## Decisions / notes
 - Keep `MetricSample.gpu` for backward compatibility so the Tauri bridge and history code need no structural change.
