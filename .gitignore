@@ -26,3 +26,7 @@ cargo-*.log
 *.exp
 node_modules/
 dist/
+
+# local release artifacts
+appimage-out/
+release-artifacts/
