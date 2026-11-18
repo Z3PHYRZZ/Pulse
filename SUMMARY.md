@@ -23,12 +23,13 @@ Universal GPU detection (Intel/AMD/NVIDIA/integrated/multi-adapter/Adreno) + Sna
 ## Done
 - v2.1.0: universal GPU detection, Snapdragon support, per-adapter UI, docs, PR #2 merged, release published
 - v2.2.0 Linux: per-OS collector facade, procfs/sysfs collectors, XDG autostart, Linux PNG icons, `linux.yml` AppImage CI
-- Verified: Windows cargo check/test/release build, frontend typecheck/tests/build, Linux cargo check for pulse-core (x86_64-unknown-linux-gnu), Linux GitHub Actions run 44267077109 green producing `Pulse_2.2.0_amd64.AppImage` (SHA-256 50447AF379A348A81A054B0B8362EBA5BE146385501C077499C9DA7706770A59)
-- Committed `ea8ce5c` and pushed to main
+- Verified: Windows cargo check/test/release build, frontend typecheck/tests/build, Linux cargo check for pulse-core (x86_64-unknown-linux-gnu), Linux GitHub Actions run 44267077109 green producing the AppImage
+- Committed `ea8ce5c`, `e4523be`, `a763f61` and pushed to main; tag v2.2.0 pushed
+- GitHub release v2.2.0 published with four assets: AppImage (SHA-256 50447AF379A348A81A054B0B8362EBA5BE146385501C077499C9DA7706770A59), portable exe, NSIS installer, MSI
+- Working tree clean, main in sync with origin
 
 ## Next
-- Create v2.2.0 GitHub release with AppImage and refreshed Windows binaries
-- Windows Tauri bundle build in progress locally
+- None outstanding. Future work from ROADMAP: threshold alerts, benchmark mode, persistent history, custom overlay themes, toast notifications.
 
 ## Decisions / notes
 - Keep `MetricSample.gpu` for backward compatibility so the Tauri bridge and history code need no structural change.
