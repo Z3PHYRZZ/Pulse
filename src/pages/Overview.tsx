@@ -21,12 +21,12 @@ export function Overview({sample, snapshot, history, onNavigate}: {sample: Metri
   const disk = sample.disk.read_bytes_per_sec + sample.disk.write_bytes_per_sec;
   const network = sample.network.upload_bytes_per_sec + sample.network.download_bytes_per_sec;
   return <>
-    <PageHeading title="System overview" description={`${snapshot.system.os_version} · ${snapshot.system.logical_cores} logical cores`} action={<Button label="Open settings" icon={<ArrowRightIcon width={16} />} size="sm" onClick={() => onNavigate('settings')} />} />
+    <PageHeading title="System overview" description={`${snapshot.system.os_version} · ${snapshot.system.logical_cores} logical cores · ${sample.cpu.architecture || snapshot.system.processor_architecture}${snapshot.system.is_arm64 ? ' (Snapdragon/ARM64)' : ''}`} action={<Button label="Open settings" icon={<ArrowRightIcon width={16} />} size="sm" onClick={() => onNavigate('settings')} />} />
     {sample.warnings.length > 0 && <Card variant="orange" className="warning-banner"><Badge variant="warning" label="Collector notes" /><Text>{sample.warnings.join(' · ')}</Text></Card>}
     <div className="metric-grid">
       <MetricCard title="CPU" value={pct(sample.cpu.usage_percent)} detail={`${sample.cpu.logical_cores} logical cores · ${sample.cpu.name}`} history={history.cpu} accent="blue" />
       <MetricCard title="Memory" value={pct(sample.memory.usage_percent)} detail={`${fmtBytes(sample.memory.used_bytes)} of ${fmtBytes(sample.memory.total_bytes)}`} history={history.memory} accent="teal" />
-      <MetricCard title="GPU" value={pct(sample.gpu.usage_percent)} detail={`${sample.gpu.name} · ${sample.gpu.source}`} history={history.gpu} accent="purple" />
+      <MetricCard title="GPU" value={pct(sample.gpu.usage_percent)} detail={`${sample.gpu.name} · ${sample.gpu.vendor}${sample.gpus?.length > 1 ? ` · ${sample.gpus.length} adapters` : ''}`} history={history.gpu} accent="purple" />
       <MetricCard title="Disk activity" value={fmtRate(disk)} detail={`Read ${fmtRate(sample.disk.read_bytes_per_sec)} · Write ${fmtRate(sample.disk.write_bytes_per_sec)}`} history={history.disk} accent="orange" />
       <MetricCard title="Network activity" value={fmtRate(network)} detail={`Download ${fmtRate(sample.network.download_bytes_per_sec)} · Upload ${fmtRate(sample.network.upload_bytes_per_sec)}`} history={history.network} accent="green" />
     </div>

@@ -8,8 +8,10 @@ use windows::Win32::System::Registry::{
     RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, HKEY_LOCAL_MACHINE, KEY_READ, REG_SZ,
 };
 use windows::Win32::System::SystemInformation::{
-    ComputerNameDnsHostname, GetComputerNameExW, GetSystemInfo, GetTickCount64,
-    GlobalMemoryStatusEx, MEMORYSTATUSEX, SYSTEM_INFO,
+    ComputerNameDnsHostname, GetComputerNameExW, GetNativeSystemInfo, GetTickCount64,
+    GlobalMemoryStatusEx, MEMORYSTATUSEX, PROCESSOR_ARCHITECTURE_AMD64,
+    PROCESSOR_ARCHITECTURE_ARM32_ON_WIN64, PROCESSOR_ARCHITECTURE_ARM64,
+    PROCESSOR_ARCHITECTURE_IA32_ON_ARM64, PROCESSOR_ARCHITECTURE_INTEL, SYSTEM_INFO,
 };
 
 pub struct SystemCollector {
@@ -34,12 +36,17 @@ pub fn read_system_info() -> Result<SystemInfo> {
     let build_number = read_build_number().unwrap_or(0);
     let username = std::env::var("USERNAME").unwrap_or_else(|_| "unknown".to_string());
     let mut sysinfo: SYSTEM_INFO = unsafe { zeroed() };
-    unsafe { GetSystemInfo(&mut sysinfo) };
+    // GetNativeSystemInfo reports the true process architecture; GetSystemInfo
+    // can report an emulated WOW64 view on x64 hosts.
+    unsafe { GetNativeSystemInfo(&mut sysinfo) };
     let mut mem: MEMORYSTATUSEX = unsafe { zeroed() };
     mem.dwLength = size_of::<MEMORYSTATUSEX>() as u32;
     unsafe { GlobalMemoryStatusEx(&mut mem) }.context("GlobalMemoryStatusEx")?;
     let uptime_ms = unsafe { GetTickCount64() };
     let boot_time_ms = crate::utils::platform::now_ms().checked_sub(uptime_ms);
+    let arch_value = unsafe { sysinfo.Anonymous.Anonymous.wProcessorArchitecture }.0;
+    let (processor_architecture, is_arm64) = architecture_label(arch_value);
+    let cpu_name = read_cpu_name().unwrap_or_default();
     Ok(SystemInfo {
         hostname,
         os_version,
@@ -48,7 +55,30 @@ pub fn read_system_info() -> Result<SystemInfo> {
         logical_cores: sysinfo.dwNumberOfProcessors as usize,
         total_memory_bytes: mem.ullTotalPhys,
         boot_time_ms,
+        processor_architecture,
+        is_arm64,
+        cpu_name,
     })
+}
+
+fn architecture_label(arch: u16) -> (String, bool) {
+    match arch {
+        a if a == PROCESSOR_ARCHITECTURE_ARM64.0 => ("ARM64".to_string(), true),
+        a if a == PROCESSOR_ARCHITECTURE_ARM32_ON_WIN64.0 => ("ARM32-on-ARM64".to_string(), true),
+        a if a == PROCESSOR_ARCHITECTURE_IA32_ON_ARM64.0 => ("x86-on-ARM64".to_string(), true),
+        a if a == PROCESSOR_ARCHITECTURE_AMD64.0 => ("x64".to_string(), false),
+        a if a == PROCESSOR_ARCHITECTURE_INTEL.0 => ("x86".to_string(), false),
+        other => (format!("0x{other:04X}"), false),
+    }
+}
+
+fn read_cpu_name() -> Result<String> {
+    const KEY: &str = "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
+    const VALUE: &str = "ProcessorNameString";
+    let key = open_registry_key(KEY)?;
+    let value = read_registry_string(key, VALUE)?;
+    let _ = unsafe { RegCloseKey(key) };
+    Ok(value)
 }
 
 fn read_computer_name() -> Result<String> {
@@ -160,11 +190,15 @@ pub fn apply_uptime(sample: &mut MetricSample) {
 pub fn ensure(system: &SystemInfo, sample: &mut MetricSample) {
     sample.cpu.logical_cores = system.logical_cores;
     if sample.cpu.name.is_empty() {
-        sample.cpu.name = format!(
-            "{} ({} logical cores)",
-            system.os_version, system.logical_cores
-        );
+        let name = if system.cpu_name.is_empty() {
+            format!("{} ({} logical cores)", system.os_version, system.logical_cores)
+        } else {
+            system.cpu_name.clone()
+        };
+        sample.cpu.name = name;
     }
+    sample.cpu.architecture = system.processor_architecture.clone();
+    sample.cpu.is_arm64 = system.is_arm64;
 }
 
 #[allow(dead_code)]

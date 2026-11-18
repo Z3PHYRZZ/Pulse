@@ -3,7 +3,7 @@ pub mod process;
 pub mod system;
 
 pub use metrics::{
-    AdapterTraffic, CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, MetricSample,
+    AdapterTraffic, CpuMetrics, DiskMetrics, GpuMetrics, GpuVendor, MemoryMetrics, MetricSample,
     NetworkMetrics, VolumeUsage,
 };
 pub use process::{ProcessInfo, ProcessSort};

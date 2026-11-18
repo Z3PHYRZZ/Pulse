@@ -5,9 +5,10 @@ import {addSample, filterProcesses, validateSettings} from './metrics';
 
 const sample = (timestamp_ms: number): MetricSample => ({
   timestamp_ms,
-  cpu: {usage_percent: 10, per_core_percent: [10], frequency_mhz: 2400, logical_cores: 1, name: 'CPU', temperature_c: null},
+  cpu: {usage_percent: 10, per_core_percent: [10], frequency_mhz: 2400, logical_cores: 1, name: 'CPU', temperature_c: null, architecture: 'x64', is_arm64: false},
   memory: {used_bytes: 5, available_bytes: 5, total_bytes: 10, usage_percent: 50},
-  gpu: {name: 'GPU', usage_percent: null, vram_used_bytes: null, vram_total_bytes: null, temperature_c: null, source: 'DXGI'},
+  gpu: {id: '0', name: 'GPU', vendor: 'Unknown', vendor_id: 0, device_id: 0, architecture: '', is_integrated: false, usage_percent: null, vram_used_bytes: null, vram_total_bytes: null, dedicated_system_bytes: null, shared_system_bytes: null, temperature_c: null, source: 'DXGI'},
+  gpus: [],
   disk: {read_bytes_per_sec: 1048576, write_bytes_per_sec: 1048576, volumes: []},
   network: {upload_bytes_per_sec: 1048576, download_bytes_per_sec: 3145728, adapters: []},
   processes: [], uptime_seconds: 1, warnings: [],

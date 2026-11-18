@@ -9,4 +9,7 @@ pub struct SystemInfo {
     pub logical_cores: usize,
     pub total_memory_bytes: u64,
     pub boot_time_ms: Option<u64>,
+    pub processor_architecture: String,
+    pub is_arm64: bool,
+    pub cpu_name: String,
 }

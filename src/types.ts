@@ -21,6 +21,9 @@ export interface SystemInfo {
   logical_cores: number;
   total_memory_bytes: number;
   boot_time_unix: number;
+  processor_architecture: string;
+  is_arm64: boolean;
+  cpu_name: string;
 }
 
 export interface Snapshot {
@@ -39,6 +42,8 @@ export interface CpuMetrics {
   logical_cores: number;
   name: string;
   temperature_c: number | null;
+  architecture: string;
+  is_arm64: boolean;
 }
 
 export interface MemoryMetrics {
@@ -49,10 +54,18 @@ export interface MemoryMetrics {
 }
 
 export interface GpuMetrics {
+  id: string;
   name: string;
+  vendor: string;
+  vendor_id: number;
+  device_id: number;
+  architecture: string;
+  is_integrated: boolean;
   usage_percent: number | null;
   vram_used_bytes: number | null;
   vram_total_bytes: number | null;
+  dedicated_system_bytes: number | null;
+  shared_system_bytes: number | null;
   temperature_c: number | null;
   source: string;
 }
@@ -94,6 +107,7 @@ export interface MetricSample {
   cpu: CpuMetrics;
   memory: MemoryMetrics;
   gpu: GpuMetrics;
+  gpus: GpuMetrics[];
   disk: DiskMetrics;
   network: NetworkMetrics;
   processes: ProcessInfo[];
@@ -112,7 +126,7 @@ export const fallbackSnapshot: Snapshot = {
     enable_startup: false, theme: 'dark',
   },
   theme: 'dark',
-  system: {hostname: 'pulse', os_version: 'Windows', build_number: 'n/a', username: 'n/a', logical_cores: 0, total_memory_bytes: 0, boot_time_unix: 0},
+  system: {hostname: 'pulse', os_version: 'Windows', build_number: 'n/a', username: 'n/a', logical_cores: 0, total_memory_bytes: 0, boot_time_unix: 0, processor_architecture: 'Detecting…', is_arm64: false, cpu_name: ''},
   startup_enabled: false,
   minimized: false,
 };

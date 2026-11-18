@@ -1,4 +1,4 @@
-import type {History, MetricSample, Page} from '../types';
+import type {GpuMetrics, History, MetricSample, Page} from '../types';
 import {fmtBytes, fmtRate, highTemp, pct, temperatureText} from '../lib/format';
 import {MetricCard} from '../components/MetricCard';
 import {Details} from '../components/Details';
@@ -37,17 +37,40 @@ function Memory({sample, history}: {sample: MetricSample; history: History}) {
       ]} /></div></>;
 }
 
+function gpuVram(gpu: GpuMetrics): string {
+  if (gpu.vram_used_bytes != null && gpu.vram_total_bytes != null) {
+    return `${fmtBytes(gpu.vram_used_bytes)} of ${fmtBytes(gpu.vram_total_bytes)}`;
+  }
+  if (gpu.vram_total_bytes != null) return fmtBytes(gpu.vram_total_bytes);
+  return 'Unavailable';
+}
+
 function Gpu({sample, history}: {sample: MetricSample; history: History}) {
-  const gpu = sample.gpu;
-  const vram = gpu.vram_used_bytes != null && gpu.vram_total_bytes != null ? `${fmtBytes(gpu.vram_used_bytes)} of ${fmtBytes(gpu.vram_total_bytes)}` : 'Unavailable';
-  return <><PageHeading title="Graphics" description="Adapter utilization, memory, and temperature" />
-    <div className="detail-grid"><MetricCard title="GPU utilization" value={pct(gpu.usage_percent)} detail={`${gpu.name} · ${gpu.source}`} history={history.gpu} accent="purple" warning={highTemp(gpu.temperature_c) ? 'Temperature high' : undefined} />
-      <Details title="Adapter details" rows={[
-        {label: 'Dedicated VRAM', value: vram},
+  const adapters = sample.gpus?.length ? sample.gpus : [sample.gpu];
+  const primary = sample.gpu;
+  return <><PageHeading title="Graphics" description={`${adapters.length} adapter${adapters.length === 1 ? '' : 's'} detected · utilization, memory, and temperature`} />
+    {adapters.length > 1 && <MetricCard title="Primary GPU" value={pct(primary.usage_percent)} detail={`${primary.name} · ${primary.vendor}`} history={history.gpu} accent="purple" warning={highTemp(primary.temperature_c) ? 'Temperature high' : undefined} />}
+    {adapters.map((gpu, index) => <div className="detail-grid" key={gpu.id || index}>
+      <MetricCard
+        title={adapters.length > 1 ? `Adapter ${index + 1} — ${gpu.vendor}` : `GPU utilization — ${gpu.vendor}`}
+        value={pct(gpu.usage_percent)}
+        detail={`${gpu.name}${gpu.is_integrated ? ' · integrated' : ''}`}
+        history={adapters.length === 1 ? history.gpu : []}
+        accent="purple"
+        warning={highTemp(gpu.temperature_c) ? 'Temperature high' : undefined}
+      />
+      <Details title={`${gpu.name} details`} rows={[
+        {label: 'Adapter', value: gpu.name},
+        {label: 'Vendor', value: gpu.vendor},
+        {label: 'Architecture', value: gpu.architecture || 'Unavailable'},
+        {label: 'Type', value: gpu.is_integrated ? 'Integrated' : 'Discrete'},
+        {label: 'Dedicated VRAM', value: gpuVram(gpu)},
+        {label: 'Shared system memory', value: gpu.shared_system_bytes != null ? fmtBytes(gpu.shared_system_bytes) : 'Unavailable'},
         {label: 'Temperature', value: temperatureText(gpu.temperature_c), warning: highTemp(gpu.temperature_c)},
         {label: 'Telemetry source', value: gpu.source},
-      ]} /></div>
-    <p className="page-note">NVML supplies NVIDIA utilization, VRAM, and temperature. DXGI supplies identity and dedicated VRAM only.</p></>;
+      ]} />
+    </div>)}
+    <p className="page-note">DXGI enumerates every adapter, including integrated and ARM64 Adreno GPUs. NVML supplies NVIDIA utilization, VRAM, and temperature; the PDH GPU Engine counter supplies utilization for Intel, AMD, and integrated adapters where present. Values remain unavailable when no API exposes them.</p></>;
 }
 
 function Storage({sample, history}: {sample: MetricSample; history: History}) {

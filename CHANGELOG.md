@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to Pulse are documented here. Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] — 2026-11-18
+### Added
+- Universal GPU detection: every DXGI adapter is enumerated, covering NVIDIA, Intel, AMD, integrated graphics, multiple simultaneous GPUs, and Qualcomm Adreno on Snapdragon.
+- `MetricSample.gpus` carries all detected adapters; the Graphics page renders a card per adapter with vendor, architecture, integrated/discrete type, VRAM, shared memory, temperature, and telemetry source.
+- Multi-device NVML support: all NVIDIA devices are loaded from `%SystemRoot%\System32\nvml.dll` (absolute path) and bound to their DXGI adapters by index order.
+- PDH `GPU Engine` utilization fallback for Intel, AMD, and integrated adapters where NVIDIA telemetry is absent.
+- Snapdragon/ARM64 CPU support: `GetNativeSystemInfo` reports the true architecture; CPU name comes from the registry, and `SystemInfo`/`CpuMetrics` expose `architecture`, `is_arm64`, and `cpu_name`.
+- Backend unit tests for PCI vendor-ID mapping (NVIDIA / Intel / AMD / Qualcomm / Microsoft / Unknown) and stable vendor labels.
+
+### Changed
+- `GpuMetrics` gains `id`, `vendor`, `vendor_id`, `device_id`, `architecture`, `is_integrated`, and system-memory fields.
+- `MetricSample.gpu` remains the primary adapter (first discrete, else first) for compatibility; the new `gpus` array holds all adapters.
+- NVML is now loaded strictly from the Windows system directory instead of the process DLL search order.
+- README documents universal GPU support and ARM64/Snapdragon builds.
+
+
 ## [2.0.3] — 2026-11-13
 ### Fixed
 - Dropped the archived `legacy-iced` (Iced 0.13) crate from the workspace so CI no longer builds a dead dependency tree.
