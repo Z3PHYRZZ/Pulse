@@ -22,14 +22,17 @@ Replace NVIDIA-only GPU detection with universal multi-vendor detection (Intel, 
 - Frontend: `GpuMetrics` gains matching fields + `MetricSample.gpus`. Graphics page renders one card per adapter with vendor badge; Overview keeps primary summary. History uses primary `gpu`.
 
 ## Done
-- (in progress) full codebase read: engine, bridge, frontend, build config, tests, docs, FFI signatures verified against windows-0.62.2 source
+- Full codebase read: engine, bridge, frontend, build config, tests, docs, FFI signatures verified against windows-0.62.2 source
+- Backend: multi-vendor GPU detection (DXGI all adapters, multi-device NVML, PDH fallback), Snapdragon/ARM64 CPU detection, vendor-ID unit tests
+- Frontend: per-adapter cards, vendor/architecture display, adapter count, updated types and tests
+- Version bumped to 2.1.0 everywhere; all six tracked Markdown files updated (README, CHANGELOG, SUMMARY, ARCHITECTURE, WINDOWS_API, ROADMAP)
+- All checks green: cargo test --workspace, tsc --noEmit, vitest run, vite build, full Tauri release build
+- PR #2 merged to main; docs commit b8dfd25 pushed to main
+- Tag v2.1.0 pushed; GitHub release v2.1.0 created with portable exe, NSIS installer, and MSI plus SHA-256 hashes
+- Working tree clean, main in sync with origin
 
 ## Next
-1. Backend: metrics model + system info + gpu collector rewrite + cpu architecture + aggregator + tests
-2. Frontend: types + pages + metrics + tests
-3. Verify: cargo check/test, npm typecheck/test/build
-4. Bump version everywhere, CHANGELOG, README
-5. Commit + push + create/update GitHub release with rebuilt portable binary if toolchain permits
+- None outstanding. Future work from ROADMAP: threshold alerts, benchmark mode, persistent history, custom overlay themes, toast notifications.
 
 ## Decisions / notes
 - Keep `MetricSample.gpu` for backward compatibility so the Tauri bridge and history code need no structural change.
