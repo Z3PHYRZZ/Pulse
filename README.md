@@ -1,10 +1,11 @@
-# Pulse 2.0.3
+# Pulse 2.1.0
 
 Pulse is a lightweight native Windows system monitor built with Tauri 2, Rust, React 19, and Meta's Astryx design system. It presents a
 dashboard-first view of CPU, memory, GPU, disk, network, and process activity, with a system tray
 and optional Windows startup integration.
 
 ![Pulse status](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)
+![Architectures](https://img.shields.io/badge/architecture-x64%20%7C%20ARM64-blueviolet)
 ![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -26,16 +27,35 @@ Temperature is reported only when a vendor API exposes it. Standard Windows perf
 not guarantee CPU temperature, and DXGI does not expose utilization or temperature. Pulse shows
 `n/a` and a collector note instead of inventing a value.
 
+## GPU and CPU detection
+
+Pulse enumerates **all** DXGI adapters at startup, so integrated and discrete GPUs from different
+vendors appear together. Each adapter is identified by vendor PCI ID (NVIDIA `0x10DE`, Intel
+`0x8086`, AMD `0x1002`/`0x1022`, Qualcomm `0x5143`), device ID, LUID, VRAM, and system-memory
+budget. Integrated GPUs are flagged from the DXGI software flag, vendor, and adapter name.
+
+Telemetry is layered per adapter:
+
+| Source | Provides | Applies to |
+|---|---|---|
+| DXGI | Name, vendor, VRAM, shared memory, integrated flag | All adapters, including Adreno |
+| NVML (all devices) | Utilization, dedicated VRAM, temperature | NVIDIA adapters |
+| PDH `GPU Engine` | Utilization | Intel, AMD, and integrated adapters |
+
+CPU architecture comes from `GetNativeSystemInfo` (true native view, not the WOW64 emulation
+view), so Snapdragon/ARM64 hosts report `ARM64` and the registry processor name (e.g. Snapdragon
+X Elite) is shown directly. Values unavailable from every source stay `n/a`.
+
 ## Download
 
-Prebuilt Windows x64 binaries are published on the [v2.0.3 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.0.3).
+Prebuilt Windows binaries are published on the [v2.1.0 release page](https://github.com/Z3PHYRZZ/Pulse/releases/tag/v2.1.0).
 
 | File | Use |
 |---|---|
-| `Pulse-2.0.3-setup-win-x64.exe` | Installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
-| `Pulse-2.0.3-portable-win-x64.exe` | Standalone `pulse.exe`; no installer required. |
+| `Pulse-2.1.0-setup-win-x64.exe` | x64 installer with Start Menu shortcut, optional desktop icon, README, license, default config, and app icon. |
+| `Pulse-2.1.0-portable-win-x64.exe` | Standalone x64 `pulse.exe`; no installer required. |
 
-The installer and portable executable target Windows 10/11 x86_64. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll`; CPU/GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
+The published installer and portable executable target Windows 10/11 x64. The engine also builds and runs on Windows ARM64 (Snapdragon), detecting the native architecture and Adreno GPUs through DXGI. NVIDIA telemetry requires an NVIDIA driver exposing `nvml.dll` in `%SystemRoot%\System32`; PDH GPU Engine utilization needs the GPU performance counters present on Windows 10/11. CPU/GPU temperatures remain hardware-dependent and show `n/a` when unavailable.
 ## Design
 
 Pulse uses Astryx's Neutral light/dark theme and actual Astryx React components. Five categorical accents distinguish CPU, memory, GPU, disk, and network graphs. Figtree is served locally under the SIL Open Font License; production needs no CDN or external font connection.
@@ -43,11 +63,11 @@ Pulse uses Astryx's Neutral light/dark theme and actual Astryx React components.
 
 Requirements:
 
-- Windows 10 or Windows 11, x86_64.
+- Windows 10 or Windows 11, x64 or ARM64 (Snapdragon).
 - Node.js 22+ and npm.
-- Rust 1.80+ with the `x86_64-pc-windows-msvc` target.
+- Rust 1.80+ with the `x86_64-pc-windows-msvc` target (or `aarch64-pc-windows-msvc` for ARM64 builds).
 - Visual Studio Build Tools with the MSVC linker.
-- Optional: NVIDIA driver with `nvml.dll` for full GPU telemetry.
+- Optional: NVIDIA driver with `nvml.dll` in `%SystemRoot%\System32` for full NVIDIA GPU telemetry.
 - Optional: Inno Setup 6 (`iscc`) for the installer.
 
 ```powershell

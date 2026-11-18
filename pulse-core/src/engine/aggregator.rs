@@ -24,10 +24,10 @@ impl Aggregator {
     pub fn new(_config: Config, system: &SystemInfo) -> Result<Self> {
         let cpu = CpuCollector::new(system.logical_cores).context("CPU collector")?;
         let mut gpu = GpuCollector::new(system.total_memory_bytes).context("GPU collector")?;
-        let probe = gpu.read();
+        let probe = gpu.primary();
         let mut warnings = Vec::new();
         if probe.usage_percent.is_none() {
-            warnings.push("GPU utilization and temperature need NVML or vendor telemetry; DXGI reports identity and VRAM only.".to_string());
+            warnings.push("GPU utilization and temperature need NVML, PDH GPU Engine, or vendor telemetry; DXGI reports identity and VRAM only.".to_string());
         }
         let disk = DiskCollector::new().context("disk collector")?;
         let network = NetworkCollector::new().context("network collector")?;

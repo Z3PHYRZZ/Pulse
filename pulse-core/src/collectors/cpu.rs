@@ -70,6 +70,8 @@ impl CpuCollector {
             logical_cores: 0,
             name: String::new(),
             temperature_c: None,
+            architecture: String::new(),
+            is_arm64: false,
         })
     }
 }

@@ -4,9 +4,10 @@ import {connectMetrics} from './pulse';
 
 const sample = (timestamp_ms: number): MetricSample => ({
   timestamp_ms,
-  cpu: {usage_percent: timestamp_ms, per_core_percent: [], frequency_mhz: null, logical_cores: 1, name: 'CPU', temperature_c: null},
+  cpu: {usage_percent: timestamp_ms, per_core_percent: [], frequency_mhz: null, logical_cores: 1, name: 'CPU', temperature_c: null, architecture: 'x64', is_arm64: false},
   memory: {used_bytes: 1, available_bytes: 1, total_bytes: 2, usage_percent: 50},
-  gpu: {name: 'GPU', usage_percent: null, vram_used_bytes: null, vram_total_bytes: null, temperature_c: null, source: 'DXGI'},
+  gpu: {id: '0', name: 'GPU', vendor: 'Unknown', vendor_id: 0, device_id: 0, architecture: '', is_integrated: false, usage_percent: null, vram_used_bytes: null, vram_total_bytes: null, dedicated_system_bytes: null, shared_system_bytes: null, temperature_c: null, source: 'DXGI'},
+  gpus: [],
   disk: {read_bytes_per_sec: 0, write_bytes_per_sec: 0, volumes: []},
   network: {upload_bytes_per_sec: 0, download_bytes_per_sec: 0, adapters: []},
   processes: [], uptime_seconds: 0, warnings: [],
